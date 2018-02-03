@@ -44,9 +44,9 @@ class AclService
      */
     public function newAclItem($table, $ownerId, $aclField = 'aclItemId')
     {
-
+        $aclItemClass = $this->_aclItemModel;
         try {
-            $aclItem = $this->_aclItemModel->reset();
+            $aclItem = new $aclItemClass();
             $aclItem->id = $aclItem->getUUID();
             $aclItem->tableName = $table;
             $aclItem->modelId = $ownerId;
@@ -67,8 +67,9 @@ class AclService
      */
     public function newUserAcl($aclItemId, $userId, $level)
     {
+        $aclClass = $this->_aclModel;
         try {
-            $acl = $this->_aclModel->reset();
+            $acl = new $aclClass();
             $acl->id = $acl->getUUID();
             $acl->aclItemId = $aclItemId;
             $acl->userId = $userId;
@@ -90,8 +91,9 @@ class AclService
      */
     public function newGroupAcl($aclItemId, $groupId, $level)
     {
+        $aclClass = $this->_aclModel;
         try {
-            $acl = $this->_aclModel->reset();
+            $acl = new $aclClass();
             $acl->id = $acl->getUUID();
             $acl->aclItemId = $aclItemId;
             $acl->userId = '';
@@ -112,8 +114,10 @@ class AclService
      */
     public function updateAcl($aclId, $level)
     {
+        $aclClass = $this->_aclModel;
         try {
-            $acl = $this->_aclModel->findFirst('id = ' . $aclId);
+            $acl = new $aclClass();
+            $acl = $acl->findFirst('id = ' . $aclId);
             $acl->aclLevel = $level;
             $acl->save();
         } catch (\Exception $e) {
