@@ -373,7 +373,7 @@ class DatabaseInstaller
     {
         $migrates = [];
         if ($module === '') {
-            $path = APP_PATH . '/common/migrations/';
+            $path = __DIR__;
         } else {
             $path = APP_PATH . '/modules/' . $module . '/database/migrations/';
         }
