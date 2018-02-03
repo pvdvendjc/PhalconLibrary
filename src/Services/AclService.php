@@ -42,11 +42,11 @@ class AclService
      * @return uuid
      * @throws \Phalcon\Db\Exception
      */
-    public static function newAclItem($table, $ownerId, $aclField = 'aclItemId')
+    public function newAclItem($table, $ownerId, $aclField = 'aclItemId')
     {
 
         try {
-            $aclItem = self::$_aclItemModel->reset();
+            $aclItem = $this->_aclItemModel->reset();
             $aclItem->id = $aclItem->getUUID();
             $aclItem->tableName = $table;
             $aclItem->modelId = $ownerId;
@@ -65,10 +65,10 @@ class AclService
      * @return uuid
      * @throws \Phalcon\Db\Exception
      */
-    public static function newUserAcl($aclItemId, $userId, $level)
+    public function newUserAcl($aclItemId, $userId, $level)
     {
         try {
-            $acl = self::$_aclModel->reset();
+            $acl = $this->_aclModel->reset();
             $acl->id = $acl->getUUID();
             $acl->aclItemId = $aclItemId;
             $acl->userId = $userId;
@@ -88,10 +88,10 @@ class AclService
      * @return uuid
      * @throws \Phalcon\Db\Exception
      */
-    public static function newGroupAcl($aclItemId, $groupId, $level)
+    public function newGroupAcl($aclItemId, $groupId, $level)
     {
         try {
-            $acl = self::$_aclModel->reset();
+            $acl = $this->_aclModel->reset();
             $acl->id = $acl->getUUID();
             $acl->aclItemId = $aclItemId;
             $acl->userId = '';
@@ -110,10 +110,10 @@ class AclService
      * @return boolean
      * @throws \Phalcon\Db\Exception
      */
-    public static function updateAcl($aclId, $level)
+    public function updateAcl($aclId, $level)
     {
         try {
-            $acl = self::$_aclModel->findFirst('id = ' . $aclId);
+            $acl = $this->_aclModel->findFirst('id = ' . $aclId);
             $acl->aclLevel = $level;
             $acl->save();
         } catch (\Exception $e) {
