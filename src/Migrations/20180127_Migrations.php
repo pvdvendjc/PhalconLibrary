@@ -34,6 +34,7 @@ class Migrations_20180127 extends DatabaseInstaller
                     'type' => Column::TYPE_VARCHAR,
                     'size' => 50,
                     'notNull' => true,
+                    'default' => '',
                     'after' => 'id'
                 ]),
                 new Column('version', [

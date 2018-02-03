@@ -426,9 +426,6 @@ class DatabaseInstaller
                 $migrationRecord->table = $response['table'];
                 $migrationRecord->class = $response['className'];
                 $migrationRecord->migrationRun = $runNumber;
-                echo $response['className'] . ': ';
-                echo $migrationRecord->save();
-                echo '<br />';
             }
         }
     }
