@@ -55,11 +55,6 @@ class BaseModel extends Model
             $softDelete = new SoftDelete(['field' => 'softDeleted', 'value' => 1]);
             $this->addBehavior($softDelete);
         }
-
-        if ($this->_modifiers) {
-            $this->hasOne('creatorId', 'Horecatools\Modules\Base\Models\User', 'id', ['alias' => 'Creator']);
-            $this->hasOne('modifierId', 'Horecatools\Modules\Base\Models\User', 'id', ['alias' => 'Modifier']);
-        }
     }
 
     public function onConstruct()

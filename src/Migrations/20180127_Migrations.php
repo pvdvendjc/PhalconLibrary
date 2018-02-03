@@ -6,15 +6,17 @@
  * Time: 23:59
  */
 
+use Djc\Phalcon\Migrations\DatabaseInstaller;
+
 use Phalcon\Db\Column;
 use Phalcon\Db\Index;
 
-class Migrations_20180127 extends \Horecatools\Migrations\DatabaseInstaller
+class Migrations_20180127 extends DatabaseInstaller
 {
     public $version = 20180127;
     public $module = '';
     public $firstVersion = true;
-    public $model = 'Horecatools\Models\Migration';
+    public $model = 'Djc\Phalcon\Models\Migration';
 
     public function morph() {
         $modelClass = $this->model;
