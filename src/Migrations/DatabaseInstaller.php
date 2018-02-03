@@ -7,8 +7,8 @@
 
 namespace Djc\Phalcon\Migrations;
 
-
 use Djc\Phalcon\Models\Migration;
+
 use Phalcon\Di\FactoryDefault;
 use Phalcon\Exception;
 use Phalcon\Db\Exception as dbException;
@@ -377,13 +377,11 @@ class DatabaseInstaller
         } else {
             $path = APP_PATH . '/modules/' . $module . '/database/migrations/';
         }
-        echo $path . '<br />';
 
         $migrations = glob($path . '*.php');    // Glob sorts alphabetically by nature, if version is 00000001 this will always be first executed
         foreach ($migrations as $migration) {
             // check if current version is less then versionNumber in
             $fileName = str_replace($path, '', $migration);
-            echo $fileName . '<br />';
             $version = substr($fileName, 0, 8);
             if ((int)$version > 0) {
                 $className = substr($fileName, 9, -4) . '_' . $version;
@@ -428,7 +426,9 @@ class DatabaseInstaller
                 $migrationRecord->table = $response['table'];
                 $migrationRecord->class = $response['className'];
                 $migrationRecord->migrationRun = $runNumber;
-                $migrationRecord->save();
+                echo $response['className'] . ': ';
+                echo $migrationRecord->save();
+                echo '<br />';
             }
         }
     }
