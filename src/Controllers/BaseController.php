@@ -22,7 +22,7 @@ class BaseController extends Controller
      */
     protected $_headers = [];
     /**
-     * @var BaseModel $_model constructed Model via initialize construction
+     * @var \Djc\Phalcon\Models\BaseModel $_model constructed Model via initialize construction
      */
     protected $_model;
     /**
@@ -64,33 +64,89 @@ class BaseController extends Controller
             }
 
             if (!$this->checkAccess()) {
-                throw new \Exception('No access allowed to this function');
+                throw new Exception('No access allowed to this function');
             }
         } catch (Exception $e) {
             error_log($e->getMessage());
             throw new Exception($e->getMessage());
         }
 
-        $this->afterInitialize();
-
-    }
-
-    protected function afterInitialize() {
         if (isset($this->_postFields['order'])) {
             $this->_model->orderField = $this->_postFields['order']['field'];
             $this->_model->orderDirection = $this->_postFields['order']['direction'];
         }
+
+        $this->afterInitialize();
     }
 
+    /**
+     * Run this function after initializing the controller for extra initialization functions
+     *
+     */
+    protected function afterInitialize() {
+
+    }
+
+    /**
+     * Create function for checking access to several menu-paths
+     * Override this function in local implementations and return true otherwise an Exception is thrown
+     *
+     * @return bool
+     */
     protected function checkAccess() {
         return false;
     }
 
     public function makeFilter() {
-
+        $bindArray = [];
+        $filterString = '';
+        foreach ($this->_filters as $filter) {
+            if (strlen($filterString) > 0 && array_key_exists('whereClause', $filter)) {
+                $filterString .= ' ' . $filter['whereClause'] . ' ';
+            } elseif (strlen($filterString) > 0) {
+                $filterString .= ' and ';
+            }
+            $filterString .= $filter['field'];
+            $value = "'" . $filter['value'] . "'";
+            switch ($filter['operator']) {
+                case 'eq':
+                    $filterString .= '=';
+                    break;
+                case 'ne':
+                    $filterString .= '<>';
+                    break;
+                case 'ge':
+                    $filterString .= '>=';
+                    break;
+                case 'gt':
+                    $filterString .= '>';
+                    break;
+                case 'le':
+                    $filterString .= '<=';
+                    break;
+                case 'lt':
+                    $filterString .= '<';
+                    break;
+                case 'IN':
+                    $filterString .= ' IN(' . implode(',', $filter['value']) . ')';
+                    $value = false;
+                    break;
+            }
+            if ($value !== false) {
+                $filterString .= ':' . $filter['field'] . ':';
+                $bindArray[$filter['field']] = $value;
+            }
+        }
+        $this->_filter = [$filterString, 'bind' => $bindArray, 'order' => $this->_model->orderField . ' ' . $this->_model->orderDirection];
     }
 
     public function storeAction() {
+        $this->beforeStoreAction();
+        if (array_key_exists('filters', $this->_postFields)) {
+            $this->_filters = json_decode($this->_postFields['filters'], true);
+        }
+        $this->makeFilter();
+        $recordStore = $this->_model->find($this->_filter);
 
     }
 
@@ -98,8 +154,8 @@ class BaseController extends Controller
 
     }
 
-    public function afterStoreAction() {
-
+    public function afterStoreAction($store) {
+        return $store;
     }
 
     public function dropdownAction() {

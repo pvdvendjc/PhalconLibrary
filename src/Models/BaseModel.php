@@ -11,12 +11,11 @@
 
 namespace Djc\Phalcon\Models;
 
-use Phalcon\Di\FactoryDefault;
+use Phalcon\Db\Column;
+use Phalcon\Db\Reference;
 use Phalcon\Mvc\Model;
 use Phalcon\Mvc\Model\Behavior\SoftDelete;
 use Phalcon\Security\Random;
-use Phalcon\Db\Column;
-use Phalcon\Db\Reference;
 
 class BaseModel extends Model
 {
@@ -59,8 +58,8 @@ class BaseModel extends Model
 
     public function onConstruct()
     {
-        $di = new FactoryDefault();
-        $this->_session = $di->getDefault()->get('session');
+        $di = $this->getDI();
+        $this->_session = $di->getShared('session');
         if ($this->_modifiers) {
             $this->_relatedFields['creator'] = ['fullName'];
             $this->_relatedFields['modifier'] = ['fullName'];
@@ -76,9 +75,8 @@ class BaseModel extends Model
         }
     }
 
-    public function beforeValidation() {
-        $di = $this->getDI();
-        $this->_session = $di->getShared('session');
+    public function beforeValidation()
+    {
         if ($this->_timeStamps) {
             if ($this->createdAt == 0) {
                 $this->createdAt = time();
@@ -115,7 +113,8 @@ class BaseModel extends Model
      * @param $definition
      * @return mixed
      */
-    public function getGeneralDefinition($tableName, $definition) {
+    public function getGeneralDefinition($tableName, $definition)
+    {
         $columns = $definition['columns'];
         $foreignKeys = isset($definition['references']) ? $definition['references'] : [];
 
@@ -204,7 +203,7 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return Phalcon\Mvc\Model\ResultsetInterface
+     * @return \Phalcon\Mvc\Model\ResultsetInterface
      */
     public static function find($parameters = null)
     {
@@ -218,9 +217,10 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return Phalcon\Mvc\Model\ResultsetInterface
+     * @return \Phalcon\Mvc\Model\ResultsetInterface
      */
-    public static function findDeleted($parameters = null) {
+    public static function findDeleted($parameters = null)
+    {
         $parameters = self::softDeleteFetch($parameters, 1);
         return parent::find($parameters);
     }
@@ -231,10 +231,11 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return Phalcon\Mvc\Model\ResultsetInterface
+     * @return \Phalcon\Mvc\Model\ResultsetInterface
      */
 
-    public static function findAll($parameters = null) {
+    public static function findAll($parameters = null)
+    {
         return parent::find($parameters);
     }
 
@@ -244,7 +245,7 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return Phalcon\Mvc\Model
+     * @return \Djc\Phalcon\Models\BaseModel
      */
     public static function findFirst($parameters = null)
     {
@@ -258,9 +259,10 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return Phalcon\Mvc\Model\ResultsetInterface
+     * @return \Phalcon\Mvc\Model\ResultsetInterface
      */
-    public static function findFirstDeleted($parameters = null) {
+    public static function findFirstDeleted($parameters = null)
+    {
         $parameters = self::softDeleteFetch($parameters, 1);
         return parent::findFirst($parameters);
     }
@@ -271,10 +273,11 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return Phalcon\Mvc\Model\ResultsetInterface
+     * @return \Phalcon\Mvc\Model\ResultsetInterface
      */
 
-    public static function findFirstAll($parameters = null) {
+    public static function findFirstAll($parameters = null)
+    {
         return parent::findFirst($parameters);
     }
 
