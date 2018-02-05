@@ -38,6 +38,7 @@ class BaseModel extends Model
     public $orderField = 'id';
     public $orderDirection = 'ASC';
     public $aclField = 'aclItemId';
+    public $primaryKey = 'id';
 
     // General fields
     public $id;
@@ -281,6 +282,11 @@ class BaseModel extends Model
         return parent::findFirst($parameters);
     }
 
+    public static function findByPk($pk) {
+        $parameters = [self::$primaryKey . '=:pk:', 'bind' => ['pk' => $pk]];
+        return parent::findFirst($parameters);
+    }
+
     /**
      * @inheritdoc
      *
@@ -333,6 +339,59 @@ class BaseModel extends Model
 
         return $parameters;
     }
+
+    public function setListFields($fields)
+    {
+        $this->_listFields = $fields;
+    }
+
+    public function getListFields()
+    {
+        return $this->_listFields;
+    }
+
+    public function setDateTimeField($fields)
+    {
+        if (is_array($fields)) {
+            $this->_dateTimeFields = array_merge($this->_dateTimeFields, $fields);
+        } else {
+            array_push($this->_dateTimeFields, $fields);
+        }
+    }
+
+    public function getDateTimeFields()
+    {
+        return $this->_dateTimeFields;
+    }
+
+    public function setDateField($fields)
+    {
+        if (is_array($fields)) {
+            $this->_dateFields = array_merge($this->_dateFields, $fields);
+        } else {
+            array_push($this->_dateFields, $fields);
+        }
+    }
+
+    public function getDateFields()
+    {
+        return $this->_dateFields;
+    }
+
+    public function saveDateFields(&$postFields)
+    {
+        foreach ($this->_dateFields as $dateField) {
+            if (array_key_exists($dateField, $postFields)) {
+                $postFields[$dateField] = strtotime($postFields[$dateField]);
+            }
+        }
+        foreach ($this->_dateTimeFields as $dateField) {
+            if (array_key_exists($dateField, $postFields)) {
+                $postFields[$dateField] = strtotime($postFields[$dateField]);
+            }
+        }
+    }
+
 
 
 }

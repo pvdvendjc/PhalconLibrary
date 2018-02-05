@@ -10,6 +10,8 @@ namespace Djc\Phalcon\Controllers;
 
 use Djc\Phalcon\Migrations\DatabaseInstaller;
 use Djc\Phalcon\Models\BaseModel;
+use Djc\Phalcon\Services\AclService;
+use Djc\Phalcon\Utils;
 use Phalcon\Exception;
 use Phalcon\Mvc\Controller;
 
@@ -30,6 +32,11 @@ class BaseController extends Controller
      */
     protected $_postFields = [];
 
+    /**
+     * @var \Djc\Phalcon\Services\AclService $_aclService
+     */
+    protected $_aclService;
+
     // Protected parameters, set in several functions
     protected $_filters = [];
     protected $_filter;
@@ -37,10 +44,17 @@ class BaseController extends Controller
     protected $_store = [];
     protected $_responseArray = ['success' => false, 'data' => [], 'total' => 0, 'errrorMsg' => '', 'readTranslations' => false];
 
+    public $dateFormat = 'd-M-Y';
+    public $timeFormat = 'H:i';
+    public $dateTimeFormat;
 
-    public function initialize() {
+
+    public function initialize()
+    {
         // Disable the views in the controller. Just return a json-formatted string
         $this->view->disable();
+
+        $this->dateTimeFormat = $this->dateFormat . ' ' . $this->timeFormat;
 
         try {
             // Read headers and check access
@@ -66,14 +80,23 @@ class BaseController extends Controller
             if (!$this->checkAccess()) {
                 throw new Exception('No access allowed to this function');
             }
+
         } catch (Exception $e) {
             error_log($e->getMessage());
             throw new Exception($e->getMessage());
         }
 
-        if (isset($this->_postFields['order'])) {
+        if (array_key_exists('order', $this->_postFields)) {
             $this->_model->orderField = $this->_postFields['order']['field'];
             $this->_model->orderDirection = $this->_postFields['order']['direction'];
+        }
+
+        if (array_key_exists('listFields', $this->_postFields)) {
+            $this->_model->setListFields($this->_postFields['listFields']);
+        }
+
+        if (array_key_exists('filters', $this->_postFields)) {
+            $this->_filters = json_decode($this->_postFields['filters'], true);
         }
 
         $this->afterInitialize();
@@ -83,7 +106,8 @@ class BaseController extends Controller
      * Run this function after initializing the controller for extra initialization functions
      *
      */
-    protected function afterInitialize() {
+    protected function afterInitialize()
+    {
 
     }
 
@@ -93,11 +117,13 @@ class BaseController extends Controller
      *
      * @return bool
      */
-    protected function checkAccess() {
+    protected function checkAccess()
+    {
         return false;
     }
 
-    public function makeFilter() {
+    public function makeFilter()
+    {
         $bindArray = [];
         $filterString = '';
         foreach ($this->_filters as $filter) {
@@ -140,65 +166,259 @@ class BaseController extends Controller
         $this->_filter = [$filterString, 'bind' => $bindArray, 'order' => $this->_model->orderField . ' ' . $this->_model->orderDirection];
     }
 
-    public function storeAction() {
-        $this->beforeStoreAction();
-        if (array_key_exists('filters', $this->_postFields)) {
-            $this->_filters = json_decode($this->_postFields['filters'], true);
+    /**
+     * Format Records (specially dateTimeFields) and get all related fields (if in model)
+     *
+     * @param array $records
+     * @param boolean $getRelated
+     * @return array
+     */
+    private function _formatRecords($records, $getRelated = true)
+    {
+        foreach ($records as $recordKey => $record) {
+            if (array_key_exists('returnRaw', $this->_postFields) && $this->_postFields['returnRaw'] == true) {
+                foreach ($this->_model->getDateTimeFields() as $dateTimeField) {
+                    $record->$dateTimeField = date($this->dateTimeFormat, $this->$dateTimeField);
+                }
+                foreach ($this->_model->getDateFields() as $dateField) {
+                    $record->$dateField = date($this->dateFormat, $this->$dateField);
+                }
+            }
+            $dataRecord = $this->_getDataRecord($record, $this->_model->getListFields($getRelated));
+            $records[$recordKey] = $dataRecord;
         }
+        return $records;
+    }
+
+    /**
+     * Get all fields and related fields that are in the list
+     *
+     * @param \Djc\Phalcon\Models\BaseModel $record
+     * @param array $fields
+     * @return \stdClass
+     */
+    private function _getDataRecord($record, $fields)
+    {
+        $dataRecord = new \stdClass();
+        foreach ($fields as $key => $field) {
+            if (is_array($field)) {
+                $subRecord = $this->_getDataRecord($record->$key, $field);
+                $dataRecord->$key = $subRecord;
+            } else {
+                if (method_exists($record, $field)) {
+                    $dataRecord->$field = $record->$field();
+                } else {
+                    $dataRecord->$field = $record->$field;
+                }
+            }
+        }
+        return $dataRecord;
+    }
+
+    /**
+     * Get the gridstore for displaying data, also a single record can be retrieved but that action is better to be done with the loadAction()
+     *
+     * @return string
+     */
+    public function storeAction()
+    {
+        if (!$this->beforeStoreAction($this->_responseArray, $this->_postFields)) {
+            $this->_responseArray['success'] = false;
+            if (strlen($this->_responseArray['errorMsg']) === 0) {
+                $this->_responseArray['errorMsg'] = Utils::t('errorBeforeStore');
+            }
+        } else {
+            if (array_key_exists('getRelated', $this->_postFields)) {
+                $getRelated = $this->_postFields['getRelated'];
+            } else {
+                $getRelated = false;
+            }
+            $this->makeFilter();
+            $recordStore = $this->_model->find($this->_filter);
+            $store = $this->_formatRecords($recordStore, $getRelated);
+            if (!$this->afterStoreAction($this->_responseArray, $this->_postFields, $store)) {
+                $this->_responseArray['success'] = false;
+                if (strlen($this->_responseArray['errorMsg']) === 0) {
+                    $this->_responseArray['errorMsg'] = Utils::t('errorBeforeStore');
+                }
+            } else {
+                $this->_responseArray['data'] = $store;
+                $this->_responseArray['total'] = count($store);
+                $this->_responseArray['success'] = true;
+            }
+        }
+        return json_encode($this->_responseArray);
+    }
+
+    /**
+     * Set default/extra params to this storeAction
+     * Add values to the response array
+     * If this function returns false the storeAction will be broken and returns to the calling function
+     *
+     * @param $response
+     * @param $params
+     * @return bool
+     */
+    public function beforeStoreAction(&$response, &$params)
+    {
+        return true;
+    }
+
+    /**
+     * Set extra values in the store (extra fields or default records)
+     * Add values to the response array
+     * If this function returns false the storeAction will be broken and returns to the calling function
+     *
+     * @param $response
+     * @param $params
+     * @param $store
+     * @return bool
+     */
+    public function afterStoreAction(&$response, &$params, &$store)
+    {
+        return true;
+    }
+
+    /**
+     * Load One record (for editing) and send also the remoteCombo preview values
+     * @return string
+     */
+    public function loadAction()
+    {
+        $record = $this->_model->findByPk($this->_postFields['id']);
+        $remoteRecord = $this->_getDataRecord($record, $this->_model->getListFields());
+        $this->_responseArray['data'] = ['record' => $record, 'displayRecord' => $remoteRecord];
+        $this->_responseArray['success'] = true;
+        return json_encode($this->_responseArray);
+    }
+
+    public function dropDownAction()
+    {
         $this->makeFilter();
         $recordStore = $this->_model->find($this->_filter);
+        if (array_key_exists('valueField', $this->_postFields)) {
+            $valueField = $this->_postFields['valueField'];
+        } else {
+            $valueField = $this->_model->primaryKey;
+        }
+        $labelFields = $this->_postFields['labelFields'];
+        if (array_key_exists(['labelSeparator'])) {
+            $labelSeparator = $this->_postFields['labelSeparator'];
+        } else {
+            $labelSeparator = '-';
+        }
+        $dataRecords = [];
+        if ($this->_postFields['selectValue'] === 'Y') {
+            $dataRecords[] = ['value' => '', 'label' => Utils::t('selectValue')];
+        }
+        foreach ($recordStore as $record) {
+            $dataRecord = ['value' => $record->$valueField];
+            $label = '';
+            for ($i = 1; $i <= count($labelFields); $i++) {
+                $labelField = $labelFields[$i - 1];
+                $label .= $record->$labelField;
+                if ($i < count($labelFields)) {
+                    $label .= ' ' . $labelSeparator . ' ';
+                }
+            }
+            $dataRecord['label'] = $label;
+            $dataRecords[] = $dataRecord;
+        }
+        if (!$this->afterDropDownAction($this->_responseArray, $this->_postFields, $dataRecords)) {
+            $this->_responseArray['success'] = false;
+            if (strlen($this->_responseArray['errorMsg']) === 0) {
+                $this->_responseArray['errorMsg'] = Utils::t('errorBeforeStore');
+            }
+        } else {
+            $this->_responseArray['data'] = $dataRecords;
+            $this->_responseArray['total'] = count($dataRecords);
+            $this->_responseArray['success'] = true;
+        }
+
+        return json_encode($this->_responseArray);
+    }
+
+
+    public function afterDropDownAction(&$reponse, &$params, &$store)
+    {
+        return true;
+    }
+
+    public function createAction()
+    {
+        $aclField = $this->_model->aclField;
+        $this->_postFields[$this->_model->primaryKey] = $this->_model->getUUID();
+        $this->_model->saveDateFields($this->_postFields);
+        if ($aclField) {
+            $user = $this->session->get('user');
+            $this->_postFields[$aclField] = $this->_aclService->newAclItem($this->_model->getSource(), $user->id);
+            $this->_aclService->newUserAcl($this->_postFields[$aclField], $user->id, 100);
+        }
+        $saveSuccess = $this->_model->save($this->_postFields);
+        if (!$saveSuccess) {
+            $this->_responseArray['success'] = false;
+            $this->_responseArray['errorMsg'] = Utils::t('errorCreateRecord');
+        } else {
+            if (!$this->afterCreateAction($this->_responseArray)) {
+                $this->_responseArray['success'] = false;
+                if (strlen($this->_responseArray['errorMsg']) === 0) {
+                    $this->_responseArray['errorMsg'] = Utils::t('errorAfterCreate');
+                }
+            } else {
+                $this->_responseArray['newId'] = $this->_model->id;
+                if ($aclField === false) {
+                    $this->_responseArray['newAclId'] = false;
+                } else {
+                    $this->_responseArray['newAclId'] = $this->_model->$aclField;
+                }
+            }
+        }
+
+        return json_encode($this->_responseArray);
+    }
+
+    public function afterCreateAction(&$response)
+    {
+        return true;
+    }
+
+    public function updateAction()
+    {
+        $record = $this->_model->findByPk($this->_postFields[$this->_model->primaryKey]);
+        $record->update($this->_postFields);
+        $record->save();
+    }
+
+    public function beforeUpdateAction(&$response, &$params)
+    {
+        return true;
+    }
+
+    public function afterUpdateAction(&$response, &$params)
+    {
+        return true;
+    }
+
+    public function deleteAction()
+    {
+        $record = $this->_model->findByPk($this->_postFields[$this->_model->primaryKey]);
+        $record->delete();
+    }
+
+    public function afterDeleteAction()
+    {
 
     }
 
-    public function beforeStoreAction() {
-
+    public function restoreAction()
+    {
+        $record = $this->_model->findByPk($this->_postFields[$this->_model->primaryKey]);
+        $record->softDeleted = 0;
+        $record->save();
     }
 
-    public function afterStoreAction($store) {
-        return $store;
-    }
-
-    public function dropdownAction() {
-
-    }
-
-    public function afterDropDownAction() {
-
-    }
-
-    public function createAction() {
-
-    }
-
-    public function afterCreateAction() {
-
-    }
-
-    public function updateAction() {
-
-    }
-
-    public function beforeUpdateAction() {
-
-    }
-
-    public function afterUpdateAction() {
-
-    }
-
-    public function deleteAction() {
-
-    }
-
-    public function afterDeleteAction() {
-
-    }
-
-    public function restoreAction() {
-
-    }
-
-    public function beforeRestoreAction() {
+    public function beforeRestoreAction()
+    {
 
     }
 }

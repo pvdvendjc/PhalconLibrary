@@ -16,6 +16,7 @@ class Migration extends BaseModel
     public $class;
     public $table;
     public $migrationRun;
+    public $aclField = false;
 
     public function initialize()
     {
