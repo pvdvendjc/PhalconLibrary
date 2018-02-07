@@ -40,14 +40,13 @@ class BaseController extends Controller
     // Protected parameters, set in several functions
     protected $_filters = [];
     protected $_filter;
-
+    protected $_runAsAdmin = false;
     protected $_store = [];
     protected $_responseArray = ['success' => false, 'data' => [], 'total' => 0, 'errrorMsg' => '', 'readTranslations' => false];
 
     public $dateFormat = 'd-M-Y';
     public $timeFormat = 'H:i';
     public $dateTimeFormat;
-
 
     public function initialize()
     {
@@ -61,14 +60,15 @@ class BaseController extends Controller
             $this->_headers = $this->request->getHeaders();
             if ($this->checkAccess() && !$this->request->get('checkAccess', null, false)) {
                 if ($this->_headers['Authorization'] !== 'Bearer ' . $this->session->authToken) {
-                    error_log('No Correct token supplied ');
-                    exit(-1);
+                    throw new Exception('No correct token supplied');
                 }
+            } else {
+                throw new Exception('No access allowed to this function');
             }
 
             // Check if database is installed
             $connection = $this->getDI()->get('db');
-            if (!$connection->tableExists('baseUsers')) {
+            if (!$connection->tableExists('migrations')) {
                 // Install database with common modules
                 $installer = new DatabaseInstaller();
                 $installer->setModules($this->config->modules);
@@ -77,12 +77,19 @@ class BaseController extends Controller
                 }
             }
 
-            if (!$this->checkAccess()) {
-                throw new Exception('No access allowed to this function');
+            if ($this->_runAsAdmin) {
+                $this->loginAdmin();
+            }
+
+            // read parameters from request
+            if ($this->request->isGet() || $this->request->isDelete()) {
+                $this->_postFields = $this->request->get();
+            }
+            if ($this->request->isPost() || $this->request->isPut()) {
+                $this->_postFields = $this->request->getJsonRawBody(true);
             }
 
         } catch (Exception $e) {
-            error_log($e->getMessage());
             throw new Exception($e->getMessage());
         }
 
@@ -109,6 +116,13 @@ class BaseController extends Controller
     protected function afterInitialize()
     {
 
+    }
+
+    /**
+     * Must be overriden in own project otherwise function won't work
+     */
+    protected function loginAdmin() {
+        throw new Exception('Function LoginAdmin not implemented in application');
     }
 
     /**

@@ -125,4 +125,31 @@ class AclService
         }
         return true;
     }
+
+    /**
+     * Give the highest aclLevel for this alcItemID
+     * If not found give 0
+     *
+     * @param $userId
+     * @param $groupIDs
+     * @param $aclItemId
+     * @return int
+     *
+     */
+    public function aclLevel($userId, $groupIDs, $aclItemId) {
+        $params = ['aclItemId = :aclItemId AND (userId = :userId: OR groupId IN(:groupIds:)', 'bind' => [
+            'aclItemId' => $aclItemId,
+            'userId' => $userId,
+            'groupIds' => implode(',', $groupIDs)
+        ], 'order' => 'level DESC'];
+
+        $highestAcl = $this->_aclModel->findFirst($params);
+
+        if ($highestAcl === false) {
+            $level = 0;
+        } else {
+            $level = $highestAcl->level;
+        }
+        return $level;
+    }
 }
