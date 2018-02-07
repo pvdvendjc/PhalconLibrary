@@ -62,8 +62,6 @@ class BaseController extends Controller
                 if ($this->_headers['Authorization'] !== 'Bearer ' . $this->session->authToken) {
                     throw new Exception('No correct token supplied');
                 }
-            } else {
-                throw new Exception('No access allowed to this function');
             }
 
             // Check if database is installed

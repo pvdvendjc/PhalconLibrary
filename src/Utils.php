@@ -33,7 +33,7 @@ class Utils
 
     /**
      * Merge mergeObject into baseObject
-     * 
+     *
      * @param \stdClass $baseObject
      * @param \stdClass $mergeObject
      * @return \stdClass
