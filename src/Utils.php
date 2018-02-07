@@ -30,4 +30,19 @@ class Utils
         }
         return $l[$term];
     }
+
+    /**
+     * Merge mergeObject into baseObject
+     * 
+     * @param \stdClass $baseObject
+     * @param \stdClass $mergeObject
+     * @return \stdClass
+     */
+    public static function objectMerge(\stdClass $baseObject, \stdClass $mergeObject) {
+        $newObject = $mergeObject;
+        foreach ($baseObject as $key => $value) {
+            $newObject->$key = $value;
+        }
+        return $newObject;
+    }
 }
