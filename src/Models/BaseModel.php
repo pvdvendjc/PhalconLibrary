@@ -13,6 +13,7 @@ namespace Djc\Phalcon\Models;
 
 use Phalcon\Db\Column;
 use Phalcon\Db\Reference;
+use Phalcon\Di\FactoryDefault;
 use Phalcon\Mvc\Model;
 use Phalcon\Mvc\Model\Behavior\SoftDelete;
 use Phalcon\Security\Random;
@@ -32,7 +33,7 @@ class BaseModel extends Model
     protected $_relatedFields = [];
 
     // Read session for use in Several models
-    protected $_session;
+    public $session;
 
     // General settings for retrieving the data from the model, can be overruled in the controller
     public $orderField = 'id';
@@ -55,12 +56,13 @@ class BaseModel extends Model
             $softDelete = new SoftDelete(['field' => 'softDeleted', 'value' => 1]);
             $this->addBehavior($softDelete);
         }
+
     }
 
     public function onConstruct()
     {
-        $di = $this->getDI();
-        $this->_session = $di->getShared('session');
+        $di = new FactoryDefault();
+        $this->session = $di->getDefault()->get('session');
         if ($this->_modifiers) {
             $this->_relatedFields['creator'] = ['fullName'];
             $this->_relatedFields['modifier'] = ['fullName'];
@@ -84,8 +86,9 @@ class BaseModel extends Model
             }
             $this->modifiedAt = time();
         }
-        $currentUserId = $this->_session->get('currentUserId', false);
-        if ($currentUserId !== false) {
+        $curUser = $this->session->get('user', false);
+        if ($curUser !== false) {
+            $currentUserId = $curUser->id;
             if ($this->_modifiers) {
                 if ($this->creatorId == '') {
                     $this->creatorId = $currentUserId;
@@ -174,7 +177,7 @@ class BaseModel extends Model
      */
     public function createTime()
     {
-        return date($this->_session->userSettings['dateFormat'] . ' ' . $this->_session->userSettings['timeFormat'], $this->createdAt);
+        return date($this->session->userSettings['dateFormat'] . ' ' . $this->session->userSettings['timeFormat'], $this->createdAt);
     }
 
     /**
@@ -184,7 +187,7 @@ class BaseModel extends Model
      */
     public function modifyTime()
     {
-        return date($this->_session->userSettings['dateFormat'] . ' ' . $this->_session->userSettings['timeFormat'], $this->modifiedAt);
+        return date($this->session->userSettings['dateFormat'] . ' ' . $this->session->userSettings['timeFormat'], $this->modifiedAt);
     }
 
     /**
