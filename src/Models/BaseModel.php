@@ -51,6 +51,8 @@ class BaseModel extends Model
 
     public function initialize()
     {
+        $di = new FactoryDefault();
+        $this->session = $di->getDefault()->get('session');
         // Add behavior to tables in case of softDeletes
         if ($this->_softDeletes) {
             $softDelete = new SoftDelete(['field' => 'softDeleted', 'value' => 1]);
@@ -80,6 +82,8 @@ class BaseModel extends Model
 
     public function beforeValidation()
     {
+        $di = new FactoryDefault();
+        $this->session = $di->getDefault()->get('session');
         if ($this->_timeStamps) {
             if ($this->createdAt == 0) {
                 $this->createdAt = time();
