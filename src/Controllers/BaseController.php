@@ -313,7 +313,7 @@ class BaseController extends Controller
         } else {
             $valueField = $this->_model->primaryKey;
         }
-        $labelFields = $this->_postFields['labelFields'];
+        $labelFields = json_decode($this->_postFields['labelFields'], true);
         if (array_key_exists(['labelSeparator'])) {
             $labelSeparator = $this->_postFields['labelSeparator'];
         } else {
