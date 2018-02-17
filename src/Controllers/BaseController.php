@@ -10,7 +10,6 @@ namespace Djc\Phalcon\Controllers;
 
 use Djc\Phalcon\Migrations\DatabaseInstaller;
 use Djc\Phalcon\Models\BaseModel;
-use Djc\Phalcon\Services\AclService;
 use Djc\Phalcon\Utils;
 use Phalcon\Exception;
 use Phalcon\Mvc\Controller;
@@ -140,12 +139,12 @@ class BaseController extends Controller
         $filterString = '';
         foreach ($this->_filters as $filter) {
             if (strlen($filterString) > 0 && array_key_exists('whereClause', $filter)) {
-                $filterString .= ' ' . $filter['whereClause'] . ' ';
+                $filterString .= ' ' . strtoupper($filter['whereClause']) . ' ';
             } elseif (strlen($filterString) > 0) {
-                $filterString .= ' and ';
+                $filterString .= ' AND ';
             }
             $filterString .= $filter['field'];
-            $value = "'" . $filter['value'] . "'";
+            $value = $filter['value'];
             switch ($filter['operator']) {
                 case 'eq':
                     $filterString .= '=';
@@ -187,25 +186,26 @@ class BaseController extends Controller
      */
     private function _formatRecords($records, $getRelated = true)
     {
+        $returnRecords = [];
         foreach ($records as $recordKey => $record) {
             if (array_key_exists('returnRaw', $this->_postFields) && $this->_postFields['returnRaw'] == true) {
                 foreach ($this->_model->getDateTimeFields() as $dateTimeField) {
-                    $record->$dateTimeField = date($this->dateTimeFormat, $this->$dateTimeField);
+                    $record->$dateTimeField = date($this->dateTimeFormat, $record->$dateTimeField);
                 }
                 foreach ($this->_model->getDateFields() as $dateField) {
-                    $record->$dateField = date($this->dateFormat, $this->$dateField);
+                    $record->$dateField = date($this->dateFormat, $record->$dateField);
                 }
             }
             $dataRecord = $this->_getDataRecord($record, $this->_model->getListFields($getRelated));
-            $records[$recordKey] = $dataRecord;
+            $returnRecords[$recordKey] = $dataRecord;
         }
-        return $records;
+        return $returnRecords;
     }
 
     /**
      * Get all fields and related fields that are in the list
      *
-     * @param \Djc\Phalcon\Models\BaseModel $record
+     * @param BaseModel $record
      * @param array $fields
      * @return \stdClass
      */
@@ -246,6 +246,7 @@ class BaseController extends Controller
                 $getRelated = false;
             }
             $this->makeFilter();
+
             $recordStore = $this->_model->find($this->_filter);
             $store = $this->_formatRecords($recordStore, $getRelated);
             if (!$this->afterStoreAction($this->_responseArray, $this->_postFields, $store)) {
@@ -254,8 +255,8 @@ class BaseController extends Controller
                     $this->_responseArray['errorMsg'] = Utils::t('errorBeforeStore');
                 }
             } else {
-                $this->_responseArray['data'] = $store;
-                $this->_responseArray['total'] = count($store);
+                $this->_responseArray['data']['records'] = $store;
+                $this->_responseArray['data']['recordCount'] = count($store);
                 $this->_responseArray['success'] = true;
             }
         }
@@ -297,7 +298,8 @@ class BaseController extends Controller
      */
     public function loadAction()
     {
-        $record = $this->_model->findByPk($this->_postFields['id']);
+        $pkField = $this->_model->primaryKey;
+        $record = $this->_model->findByPk($this->_postFields[$pkField], $pkField);
         $remoteRecord = $this->_getDataRecord($record, $this->_model->getListFields());
         $this->_responseArray['data'] = ['record' => $record, 'displayRecord' => $remoteRecord];
         $this->_responseArray['success'] = true;
@@ -314,21 +316,21 @@ class BaseController extends Controller
             $valueField = $this->_model->primaryKey;
         }
         $labelFields = json_decode($this->_postFields['labelFields'], true);
-        if (array_key_exists(['labelSeparator'])) {
+        if (array_key_exists('labelSeparator', $this->_postFields)) {
             $labelSeparator = $this->_postFields['labelSeparator'];
         } else {
             $labelSeparator = '-';
         }
         $dataRecords = [];
-        if ($this->_postFields['selectValue'] === 'Y') {
-            $dataRecords[] = ['value' => '', 'label' => Utils::t('selectValue')];
+        if ($this->_postFields['useSelectValue'] === 'Y') {
+            $dataRecords[] = ['value' => '', 'label' => Utils::t('useSelectValue')];
         }
         foreach ($recordStore as $record) {
-            $dataRecord = ['value' => $record->$valueField];
+            $dataRecord = ['value' => $record->{$valueField}];
             $label = '';
             for ($i = 1; $i <= count($labelFields); $i++) {
                 $labelField = $labelFields[$i - 1];
-                $label .= $record->$labelField;
+                $label .= $record->{$labelField};
                 if ($i < count($labelFields)) {
                     $label .= ' ' . $labelSeparator . ' ';
                 }
@@ -342,8 +344,8 @@ class BaseController extends Controller
                 $this->_responseArray['errorMsg'] = Utils::t('errorBeforeStore');
             }
         } else {
-            $this->_responseArray['data'] = $dataRecords;
-            $this->_responseArray['total'] = count($dataRecords);
+            $this->_responseArray['data']['records'] = $dataRecords;
+            $this->_responseArray['data']['recordCount'] = count($dataRecords);
             $this->_responseArray['success'] = true;
         }
 
@@ -371,6 +373,7 @@ class BaseController extends Controller
             $this->_responseArray['success'] = false;
             $this->_responseArray['errorMsg'] = Utils::t('errorCreateRecord');
         } else {
+            $this->_responseArray['success'] = true;
             if (!$this->afterCreateAction($this->_responseArray)) {
                 $this->_responseArray['success'] = false;
                 if (strlen($this->_responseArray['errorMsg']) === 0) {
@@ -396,9 +399,15 @@ class BaseController extends Controller
 
     public function updateAction()
     {
-        $record = $this->_model->findByPk($this->_postFields[$this->_model->primaryKey]);
+        $pkField = $this->_model->primaryKey;
+        $record = $this->_model->findByPk($this->_postFields[$pkField], $pkField);
         $record->update($this->_postFields);
-        $record->save();
+        if ($record->save()) {
+            $this->_responseArray['success'] = true;
+        } else {
+            $this->_responseArray['errorMsg'] = Utils::t('updateError');
+        }
+        echo json_encode($this->_responseArray);
     }
 
     public function beforeUpdateAction(&$response, &$params)
@@ -413,8 +422,14 @@ class BaseController extends Controller
 
     public function deleteAction()
     {
-        $record = $this->_model->findByPk($this->_postFields[$this->_model->primaryKey]);
-        $record->delete();
+        $pkField = $this->_model->primaryKey;
+        $record = $this->_model->findByPk($this->_postFields[$pkField], $pkField);
+        if ($record->delete()) {
+            $this->_responseArray['success'] = true;
+        } else {
+            $this->_responseArray['errorMsg'] = Utils::t('deleteError');
+        }
+        echo json_encode($this->_responseArray);
     }
 
     public function afterDeleteAction()
@@ -426,7 +441,12 @@ class BaseController extends Controller
     {
         $record = $this->_model->findByPk($this->_postFields[$this->_model->primaryKey]);
         $record->softDeleted = 0;
-        $record->save();
+        if ($record->save()) {
+            $this->_responseArray['success'] = true;
+        } else {
+            $this->_responseArray['errorMsg'] = Utils::t('restoreError');
+        }
+        echo json_encode($this->_responseArray);
     }
 
     public function beforeRestoreAction()
