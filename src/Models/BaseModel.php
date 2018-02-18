@@ -181,7 +181,7 @@ class BaseModel extends Model
      */
     public function createTime()
     {
-        return date($this->session->userSettings['dateFormat'] . ' ' . $this->session->userSettings['timeFormat'], $this->createdAt);
+        return date($this->session->userSettings->dateFormat . ' ' . $this->session->userSettings->timeFormat, $this->createdAt);
     }
 
     /**
@@ -191,7 +191,7 @@ class BaseModel extends Model
      */
     public function modifyTime()
     {
-        return date($this->session->userSettings['dateFormat'] . ' ' . $this->session->userSettings['timeFormat'], $this->modifiedAt);
+        return date($this->session->userSettings->dateFormat . ' ' . $this->session->userSettings->timeFormat, $this->modifiedAt);
     }
 
     /**
@@ -398,7 +398,4 @@ class BaseModel extends Model
             }
         }
     }
-
-
-
 }
