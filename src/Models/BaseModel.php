@@ -40,6 +40,7 @@ class BaseModel extends Model
     public $orderDirection = 'ASC';
     public $aclField = 'aclItemId';
     public $primaryKey = 'id';
+    public $setModified = true;
 
     // General fields
     public $id;
@@ -68,8 +69,6 @@ class BaseModel extends Model
         if ($this->_modifiers) {
             $this->_relatedFields['creator'] = ['fullName'];
             $this->_relatedFields['modifier'] = ['fullName'];
-            $this->_relatedFields[] = 'createTime';
-            $this->_relatedFields[] = 'modifyTime';
         }
         $connection = $this->getReadConnection();
         if ($connection->tableExists($this->getSource())) {
@@ -88,7 +87,8 @@ class BaseModel extends Model
             if ($this->createdAt == 0) {
                 $this->createdAt = time();
             }
-            $this->modifiedAt = time();
+            if ($this->setModified)
+                $this->modifiedAt = time();
         }
         $curUser = $this->session->get('user', false);
         if ($curUser !== false) {
@@ -97,7 +97,8 @@ class BaseModel extends Model
                 if ($this->creatorId == '') {
                     $this->creatorId = $currentUserId;
                 }
-                $this->modifierId = $currentUserId;
+                if ($this->setModified)
+                    $this->modifierId = $currentUserId;
             }
         }
     }
@@ -172,26 +173,6 @@ class BaseModel extends Model
         $definition['columns'] = $columns;
         $definition['references'] = $foreignKeys;
         return $definition;
-    }
-
-    /**
-     * Get the createTime well formatted according to usersettings
-     *
-     * @return false|string
-     */
-    public function createTime()
-    {
-        return date($this->session->userSettings->dateFormat . ' ' . $this->session->userSettings->timeFormat, $this->createdAt);
-    }
-
-    /**
-     * Get the modifyTime well formatted according to usersettings
-     *
-     * @return false|string
-     */
-    public function modifyTime()
-    {
-        return date($this->session->userSettings->dateFormat . ' ' . $this->session->userSettings->timeFormat, $this->modifiedAt);
     }
 
     /**
