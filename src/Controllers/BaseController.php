@@ -41,7 +41,7 @@ class BaseController extends Controller
     protected $_filter;
     protected $_runAsAdmin = false;
     protected $_store = [];
-    protected $_responseArray = ['success' => false, 'data' => [], 'total' => 0, 'errrorMsg' => '', 'readTranslations' => false];
+    protected $_responseArray = ['success' => false, 'data' => [], 'total' => 0, 'errorMsg' => '', 'readTranslations' => false];
 
     public $dateFormat = 'd-M-Y';
     public $timeFormat = 'H:i';
@@ -119,7 +119,8 @@ class BaseController extends Controller
     /**
      * Must be overriden in own project otherwise function won't work
      */
-    protected function loginAdmin() {
+    protected function loginAdmin()
+    {
         throw new Exception('Function LoginAdmin not implemented in application');
     }
 
@@ -224,6 +225,8 @@ class BaseController extends Controller
             } else {
                 if (method_exists($record, $field)) {
                     $dataRecord->$field = $record->$field();
+                } elseif (in_array($field, $record->getJsonFields())) {
+                    $dataRecord->$field = json_decode($record->$field);
                 } else {
                     $dataRecord->$field = $record->$field;
                 }
@@ -367,34 +370,41 @@ class BaseController extends Controller
     {
         $aclField = $this->_model->aclField;
         $this->_postFields[$this->_model->primaryKey] = $this->_model->getUUID();
-        $this->_model->saveDateFields($this->_postFields);
+        $this->_model->formatFields($this->_postFields);
         if ($aclField) {
             $user = $this->session->get('user');
             $this->_postFields[$aclField] = $this->_aclService->newAclItem($this->_model->getSource(), $user->id);
             $this->_aclService->newUserAcl($this->_postFields[$aclField], $user->id, 100);
         }
-        $saveSuccess = $this->_model->save($this->_postFields);
-        if (!$saveSuccess) {
-            $this->_responseArray['success'] = false;
-            $this->_responseArray['errorMsg'] = Utils::t('errorCreateRecord');
-        } else {
-            $this->_responseArray['success'] = true;
-            if (!$this->afterCreateAction($this->_responseArray)) {
+        if ($this->beforeSaveAction($this->_responseArray)) {
+            $saveSuccess = $this->_model->save($this->_postFields);
+            if (!$saveSuccess) {
                 $this->_responseArray['success'] = false;
-                if (strlen($this->_responseArray['errorMsg']) === 0) {
-                    $this->_responseArray['errorMsg'] = Utils::t('errorAfterCreate');
-                }
+                $this->_responseArray['errorMsg'] = Utils::t('errorCreateRecord');
             } else {
-                $this->_responseArray['newId'] = $this->_model->id;
-                if ($aclField === false) {
-                    $this->_responseArray['newAclId'] = false;
+                $this->_responseArray['success'] = true;
+                if (!$this->afterCreateAction($this->_responseArray)) {
+                    $this->_responseArray['success'] = false;
+                    if (strlen($this->_responseArray['errorMsg']) === 0) {
+                        $this->_responseArray['errorMsg'] = Utils::t('errorAfterCreate');
+                    }
                 } else {
-                    $this->_responseArray['newAclId'] = $this->_model->$aclField;
+                    $this->_responseArray['newId'] = $this->_model->id;
+                    if ($aclField === false) {
+                        $this->_responseArray['newAclId'] = false;
+                    } else {
+                        $this->_responseArray['newAclId'] = $this->_model->$aclField;
+                    }
                 }
             }
         }
 
         return json_encode($this->_responseArray);
+    }
+
+    public function beforeSaveAction(&$response)
+    {
+        return true;
     }
 
     public function afterCreateAction(&$response)
@@ -406,11 +416,14 @@ class BaseController extends Controller
     {
         $pkField = $this->_model->primaryKey;
         $record = $this->_model->findByPk($this->_postFields[$pkField], $pkField);
-        $record->update($this->_postFields);
-        if ($record->save()) {
-            $this->_responseArray['success'] = true;
-        } else {
-            $this->_responseArray['errorMsg'] = Utils::t('updateError');
+        $this->_model->formatFields($this->_postFields);
+        if ($this->beforeSaveAction($this->_responseArray)) {
+            $record->update($this->_postFields);
+            if ($record->save()) {
+                $this->_responseArray['success'] = true;
+            } else {
+                $this->_responseArray['errorMsg'] = Utils::t('updateError');
+            }
         }
         echo json_encode($this->_responseArray);
     }

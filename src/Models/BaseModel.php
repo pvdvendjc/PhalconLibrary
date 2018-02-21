@@ -31,6 +31,7 @@ class BaseModel extends Model
     protected $_dateTimeFields = [];
     protected $_listFields = [];
     protected $_relatedFields = [];
+    protected $_jsonFields = [];
 
     // Read session for use in Several models
     public $session;
@@ -84,9 +85,9 @@ class BaseModel extends Model
         $di = new FactoryDefault();
         $this->session = $di->getDefault()->get('session');
         if ($this->_timeStamps) {
-            if ($this->createdAt == 0) {
+            if ($this->createdAt == 0)
                 $this->createdAt = time();
-            }
+
             if ($this->setModified)
                 $this->modifiedAt = time();
         }
@@ -94,9 +95,9 @@ class BaseModel extends Model
         if ($curUser !== false) {
             $currentUserId = $curUser->id;
             if ($this->_modifiers) {
-                if ($this->creatorId == '') {
+                if ($this->creatorId == '')
                     $this->creatorId = $currentUserId;
-                }
+
                 if ($this->setModified)
                     $this->modifierId = $currentUserId;
             }
@@ -270,7 +271,8 @@ class BaseModel extends Model
         return parent::findFirst($parameters);
     }
 
-    public static function findByPk($pk, $pkField) {
+    public static function findByPk($pk, $pkField)
+    {
         $parameters = [$pkField . '=:pk:', 'bind' => ['pk' => $pk]];
         return parent::findFirst($parameters);
     }
@@ -366,7 +368,12 @@ class BaseModel extends Model
         return $this->_dateFields;
     }
 
-    public function saveDateFields(&$postFields)
+    public function getJsonFields()
+    {
+        return $this->_jsonFields;
+    }
+
+    public function formatFields(&$postFields)
     {
         foreach ($this->_dateFields as $dateField) {
             if (array_key_exists($dateField, $postFields)) {
@@ -376,6 +383,11 @@ class BaseModel extends Model
         foreach ($this->_dateTimeFields as $dateField) {
             if (array_key_exists($dateField, $postFields)) {
                 $postFields[$dateField] = strtotime($postFields[$dateField]);
+            }
+        }
+        foreach ($this->_jsonFields as $jsonField) {
+            if (array_key_exists($jsonField, $postFields)) {
+                $postFields[$jsonField] = json_encode($postFields[$jsonField]);
             }
         }
     }
