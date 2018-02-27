@@ -32,6 +32,7 @@ class BaseModel extends Model
     protected $_listFields = [];
     protected $_relatedFields = [];
     protected $_jsonFields = [];
+    protected $_boolFields = [];
 
     // Read session for use in Several models
     public $session;
@@ -72,11 +73,17 @@ class BaseModel extends Model
             $this->_relatedFields['modifier'] = ['fullName'];
         }
         $connection = $this->getReadConnection();
+//        $this->_jsonFields = [];
         if ($connection->tableExists($this->getSource())) {
             $metaData = $this->getModelsMetaData();
             $this->_listFields = array_merge($metaData->getAttributes($this), $this->_relatedFields);
+//            foreach ($connection->describeColumns($this->getSource()) as $field) {
+//                if ($field->getType() === Column::TYPE_JSON) {
+//                    $this->_jsonFields[] = $field->getName();
+//                }
+//            }
         } else {
-            $this->_listFields = array();
+            $this->_listFields = [];
         }
     }
 
@@ -85,9 +92,9 @@ class BaseModel extends Model
         $di = new FactoryDefault();
         $this->session = $di->getDefault()->get('session');
         if ($this->_timeStamps) {
-            if ($this->createdAt == 0)
+            if ($this->createdAt == 0) {
                 $this->createdAt = time();
-
+            }
             if ($this->setModified)
                 $this->modifiedAt = time();
         }
@@ -95,9 +102,9 @@ class BaseModel extends Model
         if ($curUser !== false) {
             $currentUserId = $curUser->id;
             if ($this->_modifiers) {
-                if ($this->creatorId == '')
+                if ($this->creatorId == '') {
                     $this->creatorId = $currentUserId;
-
+                }
                 if ($this->setModified)
                     $this->modifierId = $currentUserId;
             }
@@ -277,6 +284,11 @@ class BaseModel extends Model
         return parent::findFirst($parameters);
     }
 
+    public function restore() {
+        $this->softDeleted = 0;
+        return $this->save();
+    }
+
     /**
      * @inheritdoc
      *
@@ -373,6 +385,11 @@ class BaseModel extends Model
         return $this->_jsonFields;
     }
 
+    public function getBoolFields()
+    {
+        return $this->_boolFields;
+    }
+
     public function formatFields(&$postFields)
     {
         foreach ($this->_dateFields as $dateField) {
@@ -388,6 +405,11 @@ class BaseModel extends Model
         foreach ($this->_jsonFields as $jsonField) {
             if (array_key_exists($jsonField, $postFields)) {
                 $postFields[$jsonField] = json_encode($postFields[$jsonField]);
+            }
+        }
+        foreach ($this->_boolFields as $boolField) {
+            if (array_key_exists($boolField, $postFields)) {
+                $postFields[$boolField] = $postFields[$boolField] ? 1 : 0;
             }
         }
     }

@@ -145,8 +145,8 @@ class BaseController extends Controller
             } elseif (strlen($filterString) > 0) {
                 $filterString .= ' AND ';
             }
+            $addValue = true;
             $filterString .= $filter['field'];
-            $value = $filter['value'];
             switch ($filter['operator']) {
                 case 'eq':
                     $filterString .= '=';
@@ -167,14 +167,14 @@ class BaseController extends Controller
                     $filterString .= '<';
                     break;
                 case 'IN':
-                    $filterString .= ' IN(' . implode(',', $filter['value']) . ')';
-                    $value = false;
+                    $filterString .= ' IN({' . $filter['field'] . ':array})';
+                    $addValue = false;
                     break;
             }
-            if ($value !== false) {
+            if ($addValue !== false) {
                 $filterString .= ':' . $filter['field'] . ':';
-                $bindArray[$filter['field']] = $value;
             }
+            $bindArray[$filter['field']] = $filter['value'];
         }
         $this->_filter = [$filterString, 'bind' => $bindArray, 'order' => $this->_model->orderField . ' ' . $this->_model->orderDirection];
     }
@@ -197,6 +197,9 @@ class BaseController extends Controller
                 foreach ($this->_model->getDateFields() as $dateField) {
                     $record->$dateField = date($this->dateFormat, $record->$dateField);
                 }
+            }
+            foreach ($this->_model->getBoolFields() as $boolField) {
+                $record->$boolField = $record->$boolField === '0' ? false : true;
             }
             $dataRecord = $this->_getDataRecord($record, $this->_model->getListFields($getRelated));
             $returnRecords[$recordKey] = $dataRecord;
@@ -471,4 +474,10 @@ class BaseController extends Controller
     {
 
     }
+
+    public function keepaliveAction()
+    {
+        return json_encode(array('success' => true, 'message' => 'KAL called', 'sessionMaxLifeTime' => ini_get('session.gc_maxlifetime')));
+    }
+
 }

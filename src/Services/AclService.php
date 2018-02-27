@@ -136,12 +136,15 @@ class AclService
      * @return int
      *
      */
-    public function aclLevel($userId, $groupIDs, $aclItemId) {
-        $params = ['aclItemId = :aclItemId AND (userId = :userId: OR groupId IN(:groupIds:)', 'bind' => [
-            'aclItemId' => $aclItemId,
-            'userId' => $userId,
-            'groupIds' => implode(',', $groupIDs)
-        ], 'order' => 'level DESC'];
+    public function aclLevel($userId, $groupIDs, $aclItemId)
+    {
+        $params = ['aclItemId = :aclItemId AND (userId = :userId: OR groupId IN({groupIds:array})',
+            'bind' => [
+                'aclItemId' => $aclItemId,
+                'userId' => $userId,
+                'groupIds' => $groupIDs
+            ],
+            'order' => 'level DESC'];
 
         $highestAcl = $this->_aclModel->findFirst($params);
 
