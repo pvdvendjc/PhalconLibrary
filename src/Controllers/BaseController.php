@@ -219,12 +219,10 @@ class BaseController extends Controller
         $dataRecord = new \stdClass();
         foreach ($fields as $key => $field) {
             if (is_array($field)) {
-                $subRecord = $this->_getDataRecord($record->$key, $field);
-//                foreach ($subRecord as $subKey => $subValue) {
-//                    $newKey = $key . ucfirst($subKey);
-//                    $dataRecord->$newKey = $subValue;
-//                }
-                $dataRecord->$key = $subRecord;
+                if ($record->$key) {
+                    $subRecord = $this->_getDataRecord($record->$key, $field);
+                    $dataRecord->$key = $subRecord;
+                }
             } else {
                 if (method_exists($record, $field)) {
                     $dataRecord->$field = $record->$field();

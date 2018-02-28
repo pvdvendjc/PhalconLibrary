@@ -127,6 +127,32 @@ class AclService
     }
 
     /**
+     * @param uuid $aclItemId
+     * @param integer $level
+     * @param uuid $userId
+     * @param uuid $groupId
+     * @return boolean
+     * @throws \Phalcon\Db\Exception
+     */
+    public function updateAclItem($aclItemId, $level, $userId = '', $groupId = '')
+    {
+        $aclClass = $this->_aclModel;
+        try {
+            $acl = new $aclClass();
+            $acl = $acl->findFirst(['aclItemId = :aclItemId: AND userId = :userId: AND groupId = :groupId:', 'bind' => [
+                'aclItemId' => $aclItemId,
+                'userId' => $userId,
+                'groupId' => $groupId
+            ]]);
+            $acl->aclLevel = $level;
+            $acl->save();
+        } catch (\Exception $e) {
+            throw new DbException($e->getMessage());
+        }
+        return true;
+    }
+
+    /**
      * Give the highest aclLevel for this alcItemID
      * If not found give 0
      *
@@ -138,7 +164,7 @@ class AclService
      */
     public function aclLevel($userId, $groupIDs, $aclItemId)
     {
-        $params = ['aclItemId = :aclItemId AND (userId = :userId: OR groupId IN({groupIds:array})',
+        $params = ['aclItemId = :aclItemId: AND (userId = :userId: OR groupId IN({groupIds:array})',
             'bind' => [
                 'aclItemId' => $aclItemId,
                 'userId' => $userId,
@@ -155,4 +181,24 @@ class AclService
         }
         return $level;
     }
+
+    /**
+     * Revoke the rights from a specific user of group from this aclItem
+     *
+     * @param uuid $aclItemId
+     * @param uuid $userId
+     * @param uuid $groupId
+     * @return boolean
+     */
+    public function revokeAclItem($aclItemId, $userId = '', $groupId = '') {
+        $params = ['aclItemId = :aclItemId: AND userId = :userId: AND groupId = :groupId:', 'bind' => [
+            'aclItemId' => $aclItemId,
+            'userId' => $userId,
+            'groupId' => $groupId
+        ]];
+
+        $acl = $this->_aclModel->findFirst($params);
+        return $acl->delete();
+    }
+
 }
