@@ -1,978 +1,858 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: pieter
- * Date: 28-2-18
- * Time: 12:49
- */
 
 namespace Djc\Phalcon\Db\Dialect;
 
+use Phalcon\Db\Column;
+use Phalcon\Db\Exception;
 use Phalcon\Db\Dialect;
 
-class Mssql extends Dialect //implements \Phalcon\Db\DialectInterface
+/**
+ * Djc/Phalcon\Db\Dialect\Sqlsrv
+ * Generates database specific SQL for the MsSQL RDBMS.
+ */
+class Sqlsrv extends Dialect
 {
-
-    /*
-     * list of "search&replace" to make "happy" the PhalconPHP query analyzer and to use SQL Server Functions ...
-     * key=>fake function name , value=>replacement and call to the real sql server function
-     * @var array
+    /**
+     * Escape Char.
+     *
+     * @var string
      */
-    protected $functions_translate = array(
-        '_sqlsrv_datediff_d(' => 'datediff(d,',
-        '_sqlsrv_right(' => 'right(',
-        '_sqlsrv_left(' => 'left(',
-        '_sqlsrv_ltrim(' => 'ltrim(',
-        '_sqlsrv_rtrim(' => 'rtrim('
-    );
-
-    protected function do_translate($sql)
-    {
-        foreach ($this->functions_translate as $find => $replace) {
-            $sql = str_ireplace($find, $replace, $sql);
-        }
-        return $sql;
-    }
-
-    public function limit($sqlQuery, $number)
-    {
-        $sql = preg_replace('/^SELECT\s/i', 'SELECT TOP ' . $number . ' ', $sqlQuery);
-        return $sql;
-    }
-
-    public function forUpdate($sqlQuery)
-    {
-        $sql = $sqlQuery . ' WITH (UPDLOCK) ';
-        return $sql;
-    }
-
-    public function shareLock($sqlQuery)
-    {
-        $sql = $sqlQuery . ' WITH (NOLOCK) ';
-        return $sql;
-    }
-
-
-    /*
-    public function getSqlTable($tables, $escapeChar = "\"")
-    {
-
-        if (!is_array($tables))
-            return  $this->escaping($tables, $escapeChar);
-
-        $result = array();
-        foreach ($tables as $table) {
-            $result[] = $this->escaping($table, $escapeChar);
-        }
-        return $result;
-    }
-
-    public function getSqlExpression($expressions, $escapeChar = "\"")
-    {
-        $domain = $this->escaping($expressions['domain'], $escapeChar);
-        $name = $this->escaping($expressions['name'], $escapeChar);
-        $result = "$domain.$name";
-        return $result;
-    }
-    */
-
-    protected function escaping($item, $escapeChar)
-    {
-        if (is_array($escapeChar)) {
-            return $escapeChar[0] . $item . $escapeChar[1];
-        } else {
-            return $escapeChar . $item . $escapeChar;
-        }
-    }
-
-    // public function select($definition) // 1.x
-    public function select(array $definition) // 2.x
-    {
-
-//        $tables;
-//        $columns;
-//        $escapeChar;
-//        $columnItem;
-//        $column;
-//        $selectedColumns;
-//        $columnSql;
-//        $columnDomainSql;
-//        $columnAlias;
-//        $selectedTables;    //global
-//        $sqlJoin;
-//        $joinExpressions;
-//        $joinCondition;
-//        $joinConditionsArray;
-//        $tablesSql;
-//        $columnDomain;
-//        $columnAliasSql;
-//        $columnsSql;
-//        $table;
-//        $sql;
-//        $joins;
-//        $join;
-//        $sqlTable;
-//        $whereConditions;
-//        $groupFields;
-//        $groupField;
-//        $groupItems;
-//        $havingConditions;
-//        $orderFields;
-//        $orderItem;
-//        $orderItems;
-//        $orderSqlItem;
-//        $sqlOrderType;
-//        $orderSqlItemType;
-//        $limitValue;
-//        $number;
-//        $offset;
-//
-//
-        if (!is_array($definition)) {
-            throw new \Phalcon\Db\Exception("Invalid SELECT definition");
-        }
-
-        if (isset($definition['tables'])) {
-            $tables = $definition["tables"];
-        } else {
-            throw new \Phalcon\Db\Exception("The index 'tables' is required in the definition array");
-        }
-
-        if (isset($definition['columns'])) {
-            $columns = $definition["columns"];
-        } else {
-            throw new \Phalcon\Db\Exception("The index 'columns' is required in the definition array");
-        }
-
-        /*      if globals_get("db.escape_identifiers") {
-                let escapeChar = this->_escapeChar;
-                } else {
-                let escapeChar = null;
-                }*/
-        //$escapeChar = array('[',']');
-        $escapeChar = "\"";
-
-        if (is_array($columns)) {
-            $selectedColumns = array();
-            foreach ($columns as $column) {
-                /**
-                 * Escape column name
-                 */
-                $columnItem = $column[0];
-                if (is_array($columnItem)) {
-                    $columnSql = $this->getSqlExpression($columnItem, $escapeChar);
-                } else {
-                    if ($columnItem == "*") {
-                        $columnSql = $columnItem;
-                    } else {
-                        /*if globals_get("db.escape_identifiers") {
-                          let columnSql = escapeChar . columnItem . escapeChar;
-                          } else {
-                          let columnSql = columnItem;
-                          }*/
-                        $columnSql = $columnItem;
-                    }
-                }
-
-                /**
-                 * Escape column domain
-                 */
-                if (isset($column[1])) {
-                    $columnDomain = $column[1];
-                    if ($columnDomain) {
-                        /*if globals_get("db.escape_identifiers") {
-                          let columnDomainSql = escapeChar . columnDomain . escapeChar . "." . columnSql;
-                          } else {
-                          let columnDomainSql = columnDomain . "." . columnSql;
-                          }*/
-                        $columnDomainSql = $columnDomain . "." . $columnSql;
-                    } else {
-                        $columnDomainSql = $columnSql;
-                    }
-                } else {
-                    $columnDomainSql = $columnSql;
-                }
-
-                /**
-                 * Escape column alias
-                 */
-                if (isset($column[2])) {
-                    $columnAlias = $column[2];
-                    if ($columnAlias) {
-                        /*if globals_get("db.escape_identifiers") {
-                          let columnAliasSql = columnDomainSql . " AS " . escapeChar . columnAlias . escapeChar;
-                          } else {
-                          let columnAliasSql = columnDomainSql . " AS " . columnAlias;
-                          }*/
-                        $columnAliasSql = $columnDomainSql . " AS " . $columnAlias;
-                    } else {
-                        $columnAliasSql = $columnDomainSql;
-                    }
-                } else {
-                    $columnAliasSql = $columnDomainSql;
-                }
-                $selectedColumns[] = $columnAliasSql;
-            }
-            $columnsSql = join(", ", $selectedColumns);
-        } else {
-            $columnsSql = $columns;
-        }
-
-        /**
-         * Check and escape tables
-         */
-        if (is_array($tables)) {
-            $selectedTables = array();
-            foreach ($tables as $table) {
-                $selectedTables[] = $this->getSqlTable($table, $escapeChar);
-            }
-            $tablesSql = join(", ", $selectedTables);
-        } else {
-            $tablesSql = $tables;
-        }
-
-        $sql = "SELECT $columnsSql FROM /*tbl*/ $tablesSql ";
-
-
-        /**
-         * Check for joins
-         */
-        $sqlJoins = '';
-        if (isset($definition['joins'])) {
-            $joins = $definition['joins'];
-            foreach ($joins as $join) {
-
-                $sqlTable = $this->getSqlTable($join["source"], $escapeChar);
-                $selectedTables[] = $sqlTable;
-                $sqlJoin = " " . $join["type"] . " JOIN " . $sqlTable;
-
-                /**
-                 * Check if the join has conditions
-                 */
-                $joinConditionsArray = $join['conditions'];
-                if (isset($joinConditionsArray)) {
-                    if (count($joinConditionsArray)) {
-                        $joinExpressions = array();
-                        foreach ($joinConditionsArray as $joinCondition) {
-                            $joinExpressions[] = $this->getSqlExpression($joinCondition, $escapeChar);
-                        }
-                        $sqlJoin .= " ON " . join(" AND ", $joinExpressions) . " ";
-                    }
-                }
-                $sqlJoins .= $sqlJoin;
-
-            }
-        }
-
-        /**
-         * Check for a WHERE clause
-         */
-        $sqlWhere = '';
-        if (isset($definition['where'])) {
-            $whereConditions = $definition['where'];
-            if (is_array($whereConditions)) {
-                $sqlWhere .= " WHERE " . $this->getSqlExpression($whereConditions, $escapeChar);
-            } else {
-                $sqlWhere .= " WHERE " . $whereConditions;
-            }
-        }
-
-        /**
-         * Check for a GROUP clause
-         */
-        $sqlGroup = '';
-        if (isset($definition['group'])) {
-            $groupFields = $definition['group'];
-
-            $groupItems = array();
-            foreach ($groupFields as $groupField) {
-                $groupItems[] = $this->getSqlExpression($groupField, $escapeChar);
-            }
-            $sqlGroup = " GROUP BY " . join(", ", $groupItems);
-
-            /**
-             * Check for a HAVING clause
-             */
-            if (isset($definition['having'])) {
-                $havingConditions = $definition['having'];
-                $sqlGroup .= " HAVING " . $this->getSqlExpression($havingConditions, $escapeChar);
-            }
-        }
-
-        /**
-         * Check for a ORDER clause
-         */
-        $sqlOrder = '';
-        $nolockTokens = array('id');    //token to trigger nolock hint
-        if (isset($definition['order'])) {
-            $nolock = false;
-            $orderFields = $definition['order'];
-            $orderItems = array();
-            foreach ($orderFields as $orderItem) {
-                $orderSqlItem = $this->getSqlExpression($orderItem[0], $escapeChar);
-
-                /**
-                 * In the numeric 1 position could be a ASC/DESC clause
-                 */
-                if (isset($orderItem[1])) {
-                    $sqlOrderType = $orderItem[1];
-                    $orderSqlItemType = $orderSqlItem . " " . $sqlOrderType;
-                } else {
-                    $orderSqlItemType = $orderSqlItem;
-                }
-
-                //check nolock
-                if (!isset($orderItem[0]['name'])) {
-                    $orderItem[0]['name'] = '';
-                }
-                if (in_array(strtolower($orderItem[0]['name']), $nolockTokens)) {
-                    $nolock = true;
-                } else {
-                    $orderItems[] = $orderSqlItemType;
-                }
-            }
-            if (count($orderItems)) {
-                $sqlOrder = " ORDER BY /*rdr*/ " . join(", ", $orderItems);
-            }
-
-            if ($nolock) {
-                $sql .= " with (nolock) ";
-            }
-
-        }
-
-        $sql .= $sqlJoins . $sqlWhere . $sqlGroup . $sqlOrder;
-        if (empty($sqlOrder)) {
-            $sqlOrder == null;  //side effect, limit clause need =>  if (isset($sqlOrder) && !empty($sqlOrder))
-        }
-
-        /**
-         * Check for a LIMIT condition - OLD
-         */
-
-        $limitValue = isset($definition["limit"]) ? $definition["limit"] : null;
-        if (isset($limitValue)) {
-            if (is_array($limitValue)) {
-                $number = $limitValue["number"]['value'];
-                $order = 'ORDER BY id';
-                if (preg_match('/\ ORDER\ BY\ \/\*rdr\*\/\ (.*)$/i', $sql, $orx)) {
-                    $orx = $orx[1];
-                    $order = 'ORDER BY ' . $orx;
-                } else {
-                    $order = 'Order By ( SELECT COL_NAME(OBJECT_ID(\'' . $selectedTables[0] . '\'), 1) )';
-                }
-                // Check for a OFFSET condition
-                if (isset($limitValue['offset'])) {
-                    $offset = intval($limitValue['offset']['value']) + 1;
-                    $number = intval($number);
-                    if ($number < 1) {
-                        $number++;
-                    } // fix PhalconPHP 2.0.4+ ...
-                    $sql = preg_replace('#\ ORDER\ BY\ .*#i', '', $sql);
-                    $sql = preg_replace('#\ FROM\ \/\*tbl\*\/\ #', ', ROW_NUMBER() OVER (' . $order . ') AS RowNum FROM ', $sql);
-                    // $sql = 'WITH Results_CTE AS ( '.$sql.'  ) SELECT * FROM Results_CTE WHERE RowNum >= '.$offset.' AND RowNum < '.$offset.' + '.$number.' ';
-                    $sql = 'SELECT * FROM ( ' . $sql . ' ) subq WHERE RowNum >= ' . $offset . ' AND RowNum < ' . $offset . ' + ' . $number . ' ';
-                } else {
-                    $sql = $this->limit($sql, $number);
-                }
-            } else {
-                $sql = $this->limit($sql, $number);
-            }
-        }
-
-        /**
-         * Check for a LIMIT condition - NEW
-         */
-        /*
-		if (isset($definition['limit'])) {
-            $limitValue = $definition["limit"];
-            if (is_array($limitValue)) {
-                $number = $limitValue["number"]['value'];
-
-                if (isset($limitValue['offset'])) {
-                    $sql = $this->limit($sql, '100 PERCENT');
-
-                    $startIndex = $limitValue['offset']['value'] + 1;//index start from 1
-
-					$endIndex = $startIndex + $number - 1;
-
-                    $pos = strpos($sql, 'FROM');
-                    $table = substr($sql, $pos + 4); //4 = FROM
-                    $countPos = strpos($sql, 'COUNT');
-                    if ($countPos) {
-                        //if COUNT, take 'id' as default column, unless you have 'order'
-                        if (isset($sqlOrder) && !empty($sqlOrder)) {
-                            $sql = substr($sql, 0, $countPos) .  " *, ROW_NUMBER() OVER ($sqlOrder) AS rownum FROM $table";
-                        } else {
-                            $sql = substr($sql, 0, $countPos) . " *, ROW_NUMBER() OVER (Order By (SELECT COL_NAME(OBJECT_ID('{$selectedTables[0]}'), 1))) AS rownum FROM $table";
-                        }
-                    } else {
-                        if (isset($sqlOrder) && !empty($sqlOrder)) {
-                            $sql = substr($sql, 0, $pos) .  ", ROW_NUMBER() OVER ($sqlOrder) AS rownum FROM $table";
-                        } else {
-                            //if order is not giving, it will take first selected column for order.
-                            $sql = substr($sql, 0, $pos) .  ", ROW_NUMBER() OVER (ORDER BY {$selectedColumns[0]}) AS rownum FROM $table";
-                        }
-                    }
-                    //remove all column domain
-                    $pureColumns = array();
-                    foreach ($selectedColumns as $column) {
-                        $pureColumn = substr($column, ($pos = strpos($column, '.')) !== false ? $pos + 1 : 0);
-                        $pureColumns[] = $pureColumn;
-                    }
-                    $pureColumns = join(", ", $pureColumns);
-                    $sql = "SELECT $pureColumns FROM ( $sql ) AS t WHERE t.rownum BETWEEN $startIndex AND $endIndex"; //don't break line
-                } else {
-                    $sql = $this->limit($sql, $number);
-                }
-            } else {
-                $sql = $this->limit($sql, $number);
-            }
-        }
-		*/
-
-        // at this point we can do some "magic" ...
-        $sql = $this->do_translate($sql);
-
-        // echo $sql.'<br><br>';
-        // echo '<pre>'; print_r($definition); echo '</pre><br><br>';
-        return $sql;
-    }
-
-
-    // public function getColumnList($columnList) // 1.x
-    // {
-    //    //exec sp_columns 'table name'
-    // }
+    protected $_escapeChar = '"';
 
     /**
-     * Gets the column name in MsSQL
+     * Generates the SQL for LIMIT clause
+     * <code>
+     * $sql = $dialect->limit('SELECT * FROM robots', 10);
+     * echo $sql; // SELECT * FROM robots LIMIT 10
+     * $sql = $dialect->limit('SELECTFROM robots', [10, 50]);
+     * echo $sql; // SELECT * FROM robots OFFSET 10 ROWS FETCH NEXT 50 ROWS ONLY
+     * </code>.
      *
-     * @param \Phalcon\Db\ColumnInterface column
+     * @param string $sqlQuery
+     * @param mixed $number
+     *
      * @return string
      */
-    public function getColumnDefinition(\Phalcon\Db\ColumnInterface $column)  // 2.x
+    public function limit($sqlQuery, $number)
     {
-        if (!is_object($column)) {
-            throw new \Phalcon\Db\Exception("Column definition must be an object compatible with Phalcon\\Db\\ColumnInterface");
+        $offset = 0;
+        if (is_array($number)) {
+            if (isset($number[1]) && strlen($number[1])) {
+                $offset = $number[1];
+            }
+
+            $number = $number[0];
         }
 
-        switch ((int)$column->getType()) {
-            case \Phalcon\Db\Column::TYPE_INTEGER:
-                $columnSql = "INT";
+        if (strpos($sqlQuery, 'ORDER BY') === false) {
+            $sqlQuery .= ' ORDER BY 1';
+        }
+
+        return $sqlQuery . " OFFSET {$offset} ROWS FETCH NEXT {$number} ROWS ONLY";
+    }
+
+    /**
+     * Returns a SQL modified with a FOR UPDATE clause.
+     *
+     * <code>
+     * $sql = $dialect->forUpdate('SELECT * FROM robots');
+     * echo $sql; // SELECT * FROM robots WITH (UPDLOCK)
+     * </code>
+     */
+    public function forUpdate($sqlQuery)
+    {
+        return $sqlQuery . ' WITH (UPDLOCK) ';
+    }
+
+    /**
+     * Returns a SQL modified with a LOCK IN SHARE MODE clause.
+     *
+     * <code>
+     * $sql = $dialect->sharedLock('SELECT * FROM robots');
+     * echo $sql; // SELECT * FROM robots WITH (NOLOCK)
+     * </code>
+     */
+    public function sharedLock($sqlQuery)
+    {
+        return $sqlQuery . ' WITH (NOLOCK) ';
+    }
+
+    /**
+     * Gets the column name in MsSQL.
+     *
+     * @param mixed $column
+     *
+     * @return string
+     */
+    public function getColumnDefinition(\Phalcon\Db\ColumnInterface $column)
+    {
+        $columnSql = '';
+        $type = $column->getType();
+        if (is_string($type)) {
+            $columnSql .= $type;
+            $type = $column->getTypeReference();
+        }
+
+        switch ($type) {
+            case Column::TYPE_INTEGER:
+                if (empty($columnSql)) {
+                    $columnSql .= 'INT';
+                }
+
+//                $columnSql .= '('.$column->getSize().')';
+//                if ($column->isUnsigned()) {
+//                    $columnSql .= ' UNSIGNED';
+//                }
                 break;
-            case \Phalcon\Db\Column::TYPE_DATE:
-                $columnSql = "DATE";
+
+            case Column::TYPE_DATE:
+                if (empty($columnSql)) {
+                    $columnSql .= 'DATE';
+                }
                 break;
-            case \Phalcon\Db\Column::TYPE_VARCHAR:
-                $columnSql = "NCHAR(" . $column->getSize() . ")";
+
+            case Column::TYPE_VARCHAR:
+                if (empty($columnSql)) {
+                    $columnSql .= 'NVARCHAR';
+                }
+                $columnSql .= '(' . $column->getSize() . ')';
                 break;
-            case \Phalcon\Db\Column::TYPE_DECIMAL:
-                $columnSql = "DECIMAL(" . $column->getSize() . "," . $column->getScale() . ")";
+
+            case Column::TYPE_DECIMAL:
+                if (empty($columnSql)) {
+                    $columnSql .= 'DECIMAL';
+                }
+                $columnSql .= '(' . $column->getSize() . ',' . $column->getScale() . ')';
+//                if ($column->isUnsigned()) {
+//                    $columnSql .= ' UNSIGNED';
+//                }
                 break;
-            case \Phalcon\Db\Column::TYPE_DATETIME:
-                $columnSql = "DATETIME";
+
+            case Column::TYPE_DATETIME:
+                if (empty($columnSql)) {
+                    $columnSql .= 'DATETIME';
+                }
                 break;
-            case \Phalcon\Db\Column::TYPE_CHAR:
-                $columnSql = "CHAR(" . $column->getSize() . ")";
+
+            case Column::TYPE_TIMESTAMP:
+                if (empty($columnSql)) {
+                    $columnSql .= 'TIMESTAMP';
+                }
                 break;
-            case \Phalcon\Db\Column::TYPE_TEXT:
-                $columnSql = "TEXT";
+
+            case Column::TYPE_CHAR:
+                if (empty($columnSql)) {
+                    $columnSql .= 'CHAR';
+                }
+                $columnSql .= '(' . $column->getSize() . ')';
                 break;
-            case \Phalcon\Db\Column::TYPE_FLOAT:
-                $columnSql = "NUMERIC"; //FLOAT can't have range
+
+            case Column::TYPE_TEXT:
+                if (empty($columnSql)) {
+                    $columnSql .= 'NTEXT';
+                }
+                break;
+
+            case Column::TYPE_BOOLEAN:
+                if (empty($columnSql)) {
+                    $columnSql .= 'BIT';
+                }
+                break;
+
+            case Column::TYPE_FLOAT:
+                if (empty($columnSql)) {
+                    $columnSql .= 'FLOAT';
+                }
+                $size = $column->getSize();
+                if ($size) {
+//                    $scale = $column->getScale();
+//                    if ($scale) {
+//                        $columnSql .= '('.size.','.scale.')';
+//                    } else {
+                    $columnSql .= '(' . size . ')';
+//                    }
+                }
+//                if ($column->isUnsigned()) {
+//                    $columnSql .= ' UNSIGNED';
+//                }
+                break;
+
+            case Column::TYPE_DOUBLE:
+                if (empty($columnSql)) {
+                    $columnSql .= 'NUMERIC';
+                }
                 $size = $column->getSize();
                 if ($size) {
                     $scale = $column->getScale();
-                    $columnSql .= "(" . $size;
+                    $columnSql .= '(' . $size;
                     if ($scale) {
-                        $columnSql .= "," . $scale . ")";
+                        $columnSql .= ',' . $scale . ')';
                     } else {
-                        $columnSql .= ")";
+                        $columnSql .= ')';
+                    }
+                }
+//                if ($column->isUnsigned()) {
+//                    $columnSql .= ' UNSIGNED';
+//                }
+                break;
+
+            case Column::TYPE_BIGINTEGER:
+                if (empty($columnSql)) {
+                    $columnSql .= 'BIGINT';
+                }
+                /**
+                 * $size = $column->getSize();
+                 * if ($size) {
+                 * $columnSql .= '('.$size.')';
+                 * }
+                 * **/
+//                if ($column->isUnsigned()) {
+//                    $columnSql .= ' UNSIGNED';
+//                }
+                break;
+
+            case Column::TYPE_TINYBLOB:
+                if (empty($columnSql)) {
+                    $columnSql .= 'VARBINARY(255)';
+                }
+                break;
+
+            case Column::TYPE_BLOB:
+            case Column::TYPE_MEDIUMBLOB:
+            case Column::TYPE_LONGBLOB:
+                if (empty($columnSql)) {
+                    $columnSql .= 'VARBINARY(MAX)';
+                }
+                break;
+
+            default:
+                if (empty($columnSql)) {
+                    throw new Exception('Unrecognized MsSql data type at column ' . $column->getName());
+                }
+
+                $typeValues = $column->getTypeValues();
+                if (!empty($typeValues)) {
+                    if (is_array($typeValues)) {
+                        $valueSql = '';
+                        foreach ($typeValues as $value) {
+                            $valueSql .= '"' . addcslashes($value, '"') . '", ';
+                        }
+                        $columnSql .= '(' . substr(valueSql, 0, -2) . ')';
+                    } else {
+                        $columnSql .= '("' . addcslashes($typeValues, '"') . '")';
                     }
                 }
                 break;
-            default:
-                throw new \Phalcon\Db\Exception("Unrecognized Mssql data type: " . $column->getType());
         }
+
         return $columnSql;
     }
 
-    public function addColumn($tableName, $schemaName, \Phalcon\Db\ColumnInterface $column) // 2.x
+    /**
+     * Generates SQL to add a column to a table.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     * @param mixed $column
+     *
+     * @return string
+     */
+    public function addColumn($tableName, $schemaName, \Phalcon\Db\ColumnInterface $column)
     {
-        if (!is_object($column)) {
-            throw new \Phalcon\Db\Exception("Column definition must be an object compatible with Phalcon\\Db\\ColumnInterface");
+        $sql = 'ALTER TABLE ' . $this->prepareTable($tableName, $schemaName) . ' ADD [' . $column->getName() . '] ' . $this->getColumnDefinition($column);
+
+        if ($column->hasDefault()) {
+            $defaultValue = $column->getDefault();
+            if (strpos(strtoupper($defaultValue), 'CURRENT_TIMESTAMP') !== false) {
+                $sql .= ' DEFAULT CURRENT_TIMESTAMP';
+            } else {
+                $sql .= ' DEFAULT "' . addcslashes($defaultValue, '"') . '"';
+            }
         }
 
-        if ($schemaName) {
-            $sql = "ALTER TABLE [" . $schemaName . "].[" . $tableName . "] ADD ";
-        } else {
-            $sql = "ALTER TABLE [" . $tableName . "] ADD ";
+        if ($column->isNotNull()) {
+            $sql .= ' NOT NULL';
         }
 
-        $sql .= "[" . $column->getName() . "] " . $this->getColumnDefinition($column);
-
-        /* NOT NULL  alter with not ll is not allowed in mssql
-           if ($column->isNotNull()) {
-           $sql .= " NOT NULL";
-           }
-         */
+        if ($column->isAutoIncrement()) {
+            $sql .= ' IDENTITY(1,1)';
+        }
 
         if ($column->isFirst()) {
-            $sql .= " FIRST";
+            $sql .= ' FIRST';
         } else {
             $afterPosition = $column->getAfterPosition();
             if ($afterPosition) {
-                $sql .= " AFTER " . $afterPosition;
+                $sql .= ' AFTER ' . $afterPosition;
             }
         }
+
         return $sql;
     }
 
-    // public function modifyColumn($tableName, $schemaName, $column) // 1.x
-    public function modifyColumn($tableName, $schemaName, \Phalcon\Db\ColumnInterface $column, \Phalcon\Db\ColumnInterface $currentColumn = NULL) // 2.x
+    /**
+     * Generates SQL to modify a column in a table.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     * @param mixed $column
+     * @param mixed $currentColumn
+     *
+     * @return string
+     */
+    public function modifyColumn($tableName, $schemaName, \Phalcon\Db\ColumnInterface $column, \Phalcon\Db\ColumnInterface $currentColumn = null)
     {
-        if (!is_object($column)) {
-            throw new \Phalcon\Db\Exception("Column definition must be an object compatible with Phalcon\\Db\\ColumnInterface");
+        $sql = 'ALTER TABLE ' . $this->prepareTable($tableName, $schemaName) . ' ALTER COLUMN [' . $column->getName() . '] ' . $this->getColumnDefinition($column);
+
+        if ($column->hasDefault()) {
+            $defaultValue = $column->getDefault();
+            if (strpos(strtoupper($defaultValue), 'CURRENT_TIMESTAMP') !== false) {
+                $sql .= ' DEFAULT CURRENT_TIMESTAMP';
+            } else {
+                $sql .= ' DEFAULT "' . addcslashes($defaultValue, '"') . '"';
+            }
         }
 
-        if ($schemaName) {
-            $sql = "ALTER TABLE [" . $schemaName . "].[" . $tableName . "] ALTER COLUMN ";
-        } else {
-            $sql = "ALTER TABLE [" . $tableName . "] ALTER COLUMN ";
+        if ($column->isNotNull()) {
+            $sql .= ' NOT NULL';
         }
 
-        $sql .= "[" . $column->getName() . "] " . $this->getColumnDefinition($column);
+        if ($column->isAutoIncrement()) {
+            $sql .= ' IDENTITY(1,1)';
+        }
 
-        /* NOT NULL  alter with not ll is not allowed in mssql
-           if ($column->isNotNull()) {
-           $sql .= " NOT NULL";
-           }
-         */
         return $sql;
     }
 
+    /**
+     * Generates SQL to delete a column from a table.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     * @param string $columnName
+     *
+     * @return string
+     */
     public function dropColumn($tableName, $schemaName, $columnName)
     {
-        if ($schemaName) {
-            $sql = "ALTER TABLE [" . $schemaName . "].[" . $tableName . "] DROP COLUMN ";
-        } else {
-            $sql = "ALTER TABLE [" . $tableName . "] DROP COLUMN ";
-        }
-
-        $sql .= "[$columnName]";
-        return $sql;
+        return 'ALTER TABLE ' . $this->prepareTable($tableName, $schemaName) . ' DROP COLUMN [' . $columnName . ']';
     }
 
-    /*
-     * not done yet
-
-     CREATE UNIQUE NONCLUSTERED INDEX (indexname)
-     ON dbo.YourTableName(columns to include)
+    /**
+     * Generates SQL to add an index to a table.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     * @param mixed $index
+     *
+     * @return string
      */
-    // public function addIndex($tableName, $schemaName, $index) // 1.x
-    public function addIndex($tableName, $schemaName, \Phalcon\Db\IndexInterface $index) // 2.x
+    public function addIndex($tableName, $schemaName, \Phalcon\Db\IndexInterface $index)
     {
-        if (!is_object($index)) {
-            throw new \Phalcon\Db\Exception("Index parameter must be an object compatible with Phalcon\\Db\\IndexInterface");
-        }
-
-        if ($schemaName) {
-            $sql = "ALTER TABLE [" . $schemaName . "].[" . $tableName . "] ADD INDEX ";
+        $indexType = $index->getType();
+        if (!empty($indexType)) {
+            $sql = ' CREATE ' . $indexType . ' INDEX ';
         } else {
-            $sql = "ALTER TABLE [" . $tableName . "] ADD INDEX ";
+            $sql = ' CREATE INDEX ';
         }
 
-        $sql .= "[" . $index->getName() . "] " . $this->getColumnDefinition($index->getColumns());
+        $sql = '[' . $index->getName() . '] ON ' . $this->prepareTable($tableName, $schemaName) . ' (' . $this->getColumnList($index->getColumns()) . ')';
 
         return $sql;
     }
 
-    /*
-     * not done yet
+    /**
+     * Generates SQL to delete an index from a table.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     * @param string $indexName
+     *
+     * @return string
      */
     public function dropIndex($tableName, $schemaName, $indexName)
     {
-
-        if ($schemaName) {
-            $sql = "DROP INDEX ($indexName) on [" . $schemaName . "].[" . $tableName . "] ";
-        } else {
-            $sql = "DROP INDEX ($indexName) on  [" . $tableName . "] ";
-        }
-
-        return $sql;
+        return 'DROP INDEX [' . $indexName . '] ON ' . $this->prepareTable($tableName, $schemaName);
     }
 
-    // public function addPrimaryKey($tableName, $schemaName, $index) // 1.x
-    public function addPrimaryKey($tableName, $schemaName, \Phalcon\Db\IndexInterface $index) // 2.x
+    /**
+     * Generates SQL to add the primary key to a table.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     * @param mixed $index
+     *
+     * @return string
+     */
+    public function addPrimaryKey($tableName, $schemaName, \Phalcon\Db\IndexInterface $index)
     {
-        if (!is_object($index)) {
-            throw new \Phalcon\Db\Exception("Index parameter must be an object compatible with Phalcon\\Db\\IndexInterface");
-        }
-
-        if ($schemaName) {
-            $sql = "ALTER TABLE [" . $schemaName . "].[" . $tableName . "] ADD PRIMARY KEY ";
-        } else {
-            $sql = "ALTER TABLE [" . $tableName . "] ADD PRIMARY KEY ";
-        }
-
-        $sql .= "(" . $this->getColumnList($index->getColumns()) . ")";
-        return $sql;
+        return 'ALTER TABLE ' . $this->prepareTable($tableName, $schemaName) . ' ADD PRIMARY KEY (' . $this->getColumnList($index->getColumns()) . ')';
     }
 
+    /**
+     * Generates SQL to delete primary key from a table.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     *
+     * @return string
+     */
     public function dropPrimaryKey($tableName, $schemaName)
     {
-        if ($schemaName) {
-            $sql = "ALTER TABLE [" . $schemaName . "].[" . $tableName . "] DROP PRIMARY KEY ";
-        } else {
-            $sql = "ALTER TABLE [" . $tableName . "] DROP PRIMARY KEY ";
-        }
-
-        return $sql;
-
-    }
-
-
-    public function tableExists($tableName, $schemaName = null)
-    {
-        $sql = "SELECT COUNT(*) FROM [INFORMATION_SCHEMA].[TABLES] WHERE [TABLE_NAME] = '$tableName' ";
-
-        if ($schemaName) {
-            $sql = $sql . "AND TABLE_SCHEMA = '$schemaName'";
-        }
-        return $sql;
+        return 'ALTER TABLE ' . $this->prepareTable($tableName, $schemaName) . ' DROP PRIMARY KEY';
     }
 
     /**
-     * Generates SQL checking for the existence of a schema.view
+     * Generates SQL to add an index to a table.
      *
-     * @param string viewName
-     * @param string schemaName
+     * @param string $tableName
+     * @param string $schemaName
+     * @param mixed $reference
+     *
      * @return string
      */
-    public function viewExists($viewName, $schemaName = null)
-    {
-        if ($schemaName) {
-            return "SELECT COUNT(*) FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = '$viewName' and table_schema = '$schemaName'";
-        }
-        return "SELECT COUNT(*) FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = '$viewName'";
-    }
-
-    public function describeColumns($table, $schema = null)
-    {
-        /* missing information for auto increment
-           $sql = "select * from [INFORMATION_SCHEMA].[COLUMNS] where [TABLE]_NAME='$table' ";
-
-           if ($schemaName) {
-           $sql = $sql . "AND TABLE_SCHEMA = '$schemaName'";
-           }
-         */
-        $sql = "exec sp_columns [$table], [$schema]";
-        return $sql;
-    }
-
-    /**
-     * Returns a list of the tables in the database.
-     *
-     * @return array
-     */
-    public function listTables($schemaName = null)
-    {
-        //$sql =  "SELECT name FROM sysobjects WHERE type = 'U' ORDER BY name";
-        $sql = "SELECT table_name FROM [INFORMATION_SCHEMA].[TABLES] ";
-        if ($schemaName) {
-            $sql = $sql . " WHERE TABLE_SCHEMA = '$schemaName'";
-        }
-        return $sql;
-    }
-
-    /**
-     * Generates the SQL to list all views of a schema or user
-     *
-     * @param string schemaName
-     * @return array
-     */
-    public function listViews($schemaName = null)
-    {
-        if ($schemaName) {
-            return "SELECT [TABLE_NAME] AS view_name FROM [INFORMATION_SCHEMA].[VIEWS] WHERE `TABLE_SCHEMA` = '" . $schemaName . "' ORDER BY view_name";
-        }
-        return "SELECT [TABLE_NAME] AS view_name FROM [INFORMATION_SCHEMA].[VIEWS] ORDER BY view_name";
-    }
-
-    /**
-     * Generates SQL to create a view
-     *
-     * @param string viewName
-     * @param array definition
-     * @param string schemaName
-     * @return string
-     */
-    // public function createView($viewName, $definition, $schemaName) // 1.x
-    public function createView($viewName, array $definition, $schemaName = NULL)  // 2.x
-    {
-        if (!isset($definition['sql'])) {
-            throw new \Phalcon\Db\Exception("The index 'sql' is required in the definition array");
-        }
-        $viewSql = $definition['sql'];
-
-        if ($schemaName) {
-            $view = "[$schemaName].[$viewName]";
-        } else {
-            $view = "[$viewName]";
-        }
-
-        return "CREATE VIEW $view AS $viewSql";
-    }
-
-    /**
-     * Generates SQL to drop a view
-     *
-     * @param string viewName
-     * @param string schemaName
-     * @param boolean ifExists
-     * @return string
-     */
-    // public function dropView($viewName, $schemaName, $ifExists = true) // 1.x
-    public function dropView($viewName, $schemaName = NULL, $ifExists = NULL) // 2.x
-    {
-        $sql = "";
-
-        if ($schemaName) {
-            $view = "$schemaName.$viewName";
-        } else {
-            $view = "$viewName";
-        }
-
-        if ($ifExists) {
-            if ($schemaName) {
-                $sql = "IF EXISTS ( SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_NAME = '$viewName' AND TABLE_SCHEMA = '$schemaName' ) ";
-            } else {
-                $sql = "IF EXISTS ( SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_NAME = '$view' ) ";
-            }
-        }
-        $sql .= "DROP VIEW " . $view;
-        return $sql;
-    }
-
-
-    /**
-     * Generates SQL to query indexes on a table
-     *
-     * @param   string table
-     * @param   string schema
-     * @return  string
-     * TODO schema not finish yet
-     */
-    public function describeIndexes($table, $schema = null)
-    {
-        $sql = "SELECT * FROM sys.indexes ind INNER JOIN sys.tables t ON ind.object_id = t.object_id WHERE t.name = '$table' ";
-        if ($schema) {
-            //$sql .= "AND t."
-        }
-        return $sql;
-    }
-
-    /**
-     * Generates SQL to query foreign keys on a table
-     *
-     * @param   string table
-     * @param   string schema
-     * @return  string
-     */
-    public function describeReferences($table, $schema = null)
-    {
-        $sql = "SELECT TABLE_NAME,COLUMN_NAME,CONSTRAINT_NAME,REFERENCED_TABLE_SCHEMA,REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_NAME IS NOT NULL AND ";
-        if ($schema) {
-            $sql .= "CONSTRAINT_SCHEMA = '" . $schema . "' AND TABLE_NAME = '" . $table . "'";
-        } else {
-            $sql .= "TABLE_NAME = '" . $table . "'";
-        }
-        return $sql;
-    }
-
-
-    /**
-     * Generates the SQL to describe the table creation options
-     *
-     * @param   string table
-     * @param   string schema
-     * @return  string
-     */
-    public function tableOptions($table, $schema = null)
-    {
-        $sql = "SELECT TABLES.TABLE_TYPE AS table_type,TABLES.AUTO_INCREMENT AS auto_increment,TABLES.ENGINE AS engine,TABLES.TABLE_COLLATION AS table_collation FROM INFORMATION_SCHEMA.TABLES WHERE ";
-        if ($schema) {
-            $sql .= "TABLES.TABLE_SCHEMA = '" . $schema . "' AND TABLES.TABLE_NAME = '" . $table . "'";
-        } else {
-            $sql .= "TABLES.TABLE_NAME = '" . $table . "'";
-        }
-        return $sql;
-    }
-
-
     public function addForeignKey($tableName, $schemaName, \Phalcon\Db\ReferenceInterface $reference)
     {
-    }
+        $sql = 'ALTER TABLE ' . $this->prepareTable($tableName, $schemaName) . ' ADD CONSTRAINT [' . $reference->getName() . '] FOREIGN KEY (' . $this->getColumnList($reference->getColumns()) . ') REFERENCES ' . $this->prepareTable($reference->getReferencedTable(), $reference->getReferencedSchema()) . '(' . $this->getColumnList($reference->getReferencedColumns()) . ')';
 
-    public function dropForeignKey($tableName, $schemaName, $referenceName)
-    {
+        $onDelete = $reference->getOnDelete();
+        if (!empty($onDelete)) {
+            $sql .= ' ON DELETE ' . $onDelete;
+        }
+
+        $onUpdate = $reference->getOnUpdate();
+        if (!empty($onUpdate)) {
+            $sql .= ' ON UPDATE ' . $onUpdate;
+        }
+
+        return $sql;
     }
 
     /**
-     * Generates SQL to create a table
+     * Generates SQL to delete a foreign key from a table.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     * @param string $referenceName
+     *
+     * @return string
      */
-    public function createTable($tableName, $schemaName, array $definition) // 2.x
+    public function dropForeignKey($tableName, $schemaName, $referenceName)
     {
-        if (!array_key_exists('columns', $definition)) {
+        return 'ALTER TABLE ' . $this->prepareTable($tableName, $schemaName) . ' DROP FOREIGN KEY [' . $referenceName . ']';
+    }
+
+    /**
+     * Generates SQL to create a table.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     * @param array $definition
+     *
+     * @return string
+     */
+    public function createTable($tableName, $schemaName, array $definition)
+    {
+        if (isset($definition['columns']) === false) {
             throw new Exception("The index 'columns' is required in the definition array");
         }
+
         $table = $this->prepareTable($tableName, $schemaName);
 
         $temporary = false;
-        if (array_key_exists('options', $definition)) {
-            if (array_key_exists('temporary', $definition['options'])) {
-                $temporary = $definition['options']["temporary"];
-            }
+        if (isset($definition['options']) === true) {
+            $temporary = (bool)$definition['options']['temporary'];
         }
 
-        /**
-         * Create a temporary or normal table
+        /*
+         * Create a temporary o normal table
          */
         if ($temporary) {
-            $sql = "CREATE TEMPORARY TABLE " . $table . " (\n\t";
+            $sql = 'CREATE TEMPORARY TABLE ' . $table . " (";
         } else {
-            $sql = "CREATE TABLE " . $table . " (\n\t";
+            $sql = 'CREATE TABLE ' . $table . " (";
         }
 
         $createLines = [];
         foreach ($definition['columns'] as $column) {
+            $columnLine = '[' . $column->getName() . '] ' . $this->getColumnDefinition($column);
 
-            $columnLine = "`" . $column->getName() . "` " . $this->getColumnDefinition($column);
-
-            /**
+            /*
              * Add a Default clause
              */
             if ($column->hasDefault()) {
                 $defaultValue = $column->getDefault();
-                if (strtoupper($defaultValue) == "CURRENT_TIMESTAMP") {
-                    $columnLine .= " DEFAULT CURRENT_TIMESTAMP";
+                if (strpos(strtoupper($defaultValue), 'CURRENT_TIMESTAMP') !== false) {
+                    $columnLine .= ' DEFAULT CURRENT_TIMESTAMP';
                 } else {
-                    $columnLine .= " DEFAULT \"" . addcslashes(defaultValue, "\"") . "\"";
+                    $columnLine .= " DEFAULT '" . addcslashes($defaultValue, '"') . "'";
                 }
             }
 
-            /**
+            /*
              * Add a NOT NULL clause
              */
             if ($column->isNotNull()) {
-                $columnLine .= " NOT NULL";
+                $columnLine .= ' NOT NULL';
             }
 
-            /**
+            /*
              * Add an AUTO_INCREMENT clause
              */
             if ($column->isAutoIncrement()) {
-                $columnLine .= " AUTO_INCREMENT";
+                $columnLine .= ' IDENTITY(1,1)';
             }
 
-            /**
+            /*
              * Mark the column as primary key
              */
             if ($column->isPrimary()) {
-                $columnLine .= " PRIMARY KEY";
+                $columnLine .= ' PRIMARY KEY';
             }
 
             $createLines[] = $columnLine;
         }
 
-        /**
+        /*
          * Create related indexes
          */
-        if (array_key_exists('indexes', $definition)) {
+        if (isset($definition['indexes']) === true && 1 == 1) {
+            $indexSql = '';
             foreach ($definition['indexes'] as $index) {
-
                 $indexName = $index->getName();
                 $indexType = $index->getType();
 
-                /**
+                /*
                  * If the index name is primary we add a primary key
                  */
-                if ($indexName == "PRIMARY") {
-                    $indexSql = "PRIMARY KEY (" . $this->getColumnList($index->getColumns()) . ")";
+                if ($indexName == 'PRIMARY') {
+                    $pkSql = 'PRIMARY KEY (' . $this->getColumnList($index->getColumns()) . ')';
+                    $createLines[] = $pkSql;
                 } else {
                     if (!empty($indexType)) {
-                        $indexSql = $indexType . " KEY `" . $indexName . "` (" . $this->getColumnList($index->getColumns()) . ")";
+                        $indexSql .= 'CREATE ' . $indexType . ' INDEX [' . $indexName . '] ON ' . $tableName . ' (' . $this->getColumnList($index->getColumns()) . '); ';
                     } else {
-                        $indexSql = "KEY `" . $indexName . "` (" . $this->getColumnList($index->getColumns()) . ")";
+                        $indexSql = 'CREATE INDEX [' . $indexName . '] ON ' . $tableName . ' (' . $this->getColumnList($index->getColumns()) . '); ';
                     }
                 }
 
-                $createLines[] = $indexSql;
+
             }
         }
 
-        /**
+        /*
          * Create related references
-         **/
-        if (array_key_exists('references', $definition)) {
+         */
+        if (isset($definition['references']) === true) {
             foreach ($definition['references'] as $reference) {
-                $referenceSql = "CONSTRAINT `" . $reference->getName() . "` FOREIGN KEY (" . $this->getColumnList($reference->getColumns()) . ")" .
-                    " REFERENCES `" . $reference->getReferencedTable() . "`(" . $this->getColumnList($reference->getReferencedColumns()) . ")";
+                $referenceSql = 'CONSTRAINT [' . $reference->getName() . '] FOREIGN KEY (' . $this->getColumnList($reference->getColumns()) . ')'
+                    . ' REFERENCES [' . $reference->getReferencedTable() . '] (' . $this->getColumnList($reference->getReferencedColumns()) . ')';
+
                 $onDelete = $reference->getOnDelete();
                 if (!empty($onDelete)) {
-                    $referenceSql .= " ON DELETE " . $onDelete;
+                    $referenceSql .= ' ON DELETE ' . $onDelete;
                 }
+
                 $onUpdate = $reference->getOnUpdate();
                 if (!empty($onUpdate)) {
-                    $referenceSql .= " ON UPDATE " . $onUpdate;
+                    $referenceSql .= ' ON UPDATE ' . $onUpdate;
                 }
+
                 $createLines[] = $referenceSql;
             }
         }
-        $sql .= join(",\n\t", $createLines) . "\n)";
-        if (array_key_exists('options', $definition)) {
-            $sql .= " " . $this->_getTableOptions($definition);
+
+        $sql .= implode(",", $createLines) . '); ';
+        if (isset($definition['options'])) {
+            $sql .= ' ' . $this->_getTableOptions($definition);
         }
-        return sql;
+        $sql .= $indexSql;
+
+        error_log($sql);
+        return $sql;
     }
 
     /**
-     * Generates SQL to drop a table
+     * Generates SQL to drop a table.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     * @param bool $ifExists
+     *
+     * @return string
      */
-    public function dropTable($tableName, $schemaName, $ifExists = true)
+    public function dropTable($tableName, $schemaName = null, $ifExists = true)
     {
-
         $table = $this->prepareTable($tableName, $schemaName);
 
         if ($ifExists) {
-            $sql = "DROP TABLE IF EXISTS " . $table;
+            $sql = 'DROP TABLE IF EXISTS ' . $table;
         } else {
-            $sql = "DROP TABLE " . $table;
+            $sql = 'DROP TABLE ' . $table;
         }
 
         return $sql;
     }
 
-
-    public function supportsSavepoints()
+    /**
+     * Generates SQL to create a view.
+     *
+     * @param string $viewName
+     * @param array $definition
+     * @param string $schemaName
+     *
+     * @return string
+     */
+    public function createView($viewName, array $definition, $schemaName = null)
     {
+        if (!isset($definition['sql'])) {
+            throw new Exception("The index 'sql' is required in the definition array");
+        }
+
+        return 'CREATE VIEW ' . $this->prepareTable($viewName, $schemaName) . ' AS ' . $definition['sql'];
     }
 
-    public function supportsReleseSavepoints()
+    /**
+     * Generates SQL to drop a view.
+     *
+     * @param string $viewName
+     * @param string $schemaName
+     * @param bool $ifExists
+     *
+     * @return string
+     */
+    public function dropView($viewName, $schemaName = null, $ifExists = true)
     {
+        $view = $this->prepareTable($viewName, $schemaName);
+
+        if ($ifExists) {
+            $sql = 'DROP VIEW IF EXISTS ' . $view;
+        } else {
+            $sql = 'DROP VIEW ' . $view;
+        }
+
+        return $sql;
     }
 
-    public function createSavepoint($name)
+    /**
+     * Generates SQL checking for the existence of a schema.table
+     * <code>
+     * echo $dialect->tableExists("posts", "blog");
+     * echo $dialect->tableExists("posts");
+     * </code>.
+     *
+     * @param string $tableName
+     * @param string $schemaName
+     *
+     * @return string
+     */
+    public function tableExists($tableName, $schemaName = null)
     {
+        $sql = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{$tableName}'";
+
+        if ($schemaName) {
+            $sql .= " AND TABLE_SCHEMA = '{$schemaName}'";
+        }
+
+        return $sql;
     }
 
-    public function releaseSavepoint($name)
+    /**
+     * Generates SQL checking for the existence of a schema.view.
+     *
+     * @param string $viewName
+     * @param string $schemaName
+     *
+     * @return string
+     */
+    public function viewExists($viewName, $schemaName = null)
     {
+        $sql = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_NAME = '{$viewName}'";
+
+        if ($schemaName) {
+            $sql .= " AND TABLE_SCHEMA = '{$schemaName}'";
+        }
+
+        return $sql;
     }
 
-    public function rollbackSavepoint($name)
+    /**
+     * Generates SQL describing a table
+     * <code>
+     * print_r($dialect->describeColumns("posts"));
+     * </code>.
+     *
+     * @param string $table
+     * @param string $schema
+     *
+     * @return string
+     */
+    public function describeColumns($table, $schema = null)
     {
+        $sql = "exec sp_columns @table_name = '{$table}'";
+        if ($schema) {
+            $sql .= ", @table_owner = '{$schema}'";
+        }
+
+        return $sql;
     }
 
+    /**
+     * List all tables in database
+     * <code>
+     * print_r($dialect->listTables("blog"))
+     * </code>.
+     *
+     * @param string $schemaName
+     *
+     * @return string
+     */
+    public function listTables($schemaName = null)
+    {
+        $sql = 'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES';
+        if ($schemaName) {
+            $sql .= " WHERE TABLE_SCHEMA = '{$schemaName}'";
+        }
+
+        return $sql;
+    }
+
+    /**
+     * Generates the SQL to list all views of a schema or user.
+     *
+     * @param string $schemaName
+     *
+     * @return string
+     */
+    public function listViews($schemaName = null)
+    {
+        $sql = 'SELECT TABLE_NAME AS view_name FROM INFORMATION_SCHEMA.VIEWS';
+        if ($schemaName) {
+            $sql .= " WHERE TABLE_SCHEMA = '{$schemaName}'";
+        }
+
+        return $sql . ' ORDER BY view_name';
+    }
+
+    /**
+     * Generates SQL to query indexes on a table.
+     *
+     * @param string $table
+     * @param string $schema
+     *
+     * @return string
+     */
+    public function describeIndexes($table, $schema = null)
+    {
+        $sql = "SELECT * FROM sys.indexes ind INNER JOIN sys.tables t ON ind.object_id = t.object_id WHERE t.name = '{$table}'";
+        if ($schema) {
+        }
+
+        return $sql;
+    }
+
+    /**
+     * Generates SQL to query foreign keys on a table.
+     *
+     * @param string $table
+     * @param string $schema
+     *
+     * @return string
+     */
+    public function describeReferences($table, $schema = null)
+    {
+        $sql = 'SELECT TABLE_NAME,COLUMN_NAME,CONSTRAINT_NAME,REFERENCED_TABLE_SCHEMA,REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_NAME IS NOT NULL AND ';
+        if ($schema) {
+            $sql .= "CONSTRAINT_SCHEMA = '" . $schema . "' AND TABLE_NAME = '" . $table . "'";
+        } else {
+            $sql .= "TABLE_NAME = '" . $table . "'";
+        }
+
+        return $sql;
+    }
+
+    /**
+     * Generates the SQL to describe the table creation options.
+     *
+     * @param string $table
+     * @param string $schema
+     *
+     * @return string
+     */
+    public function tableOptions($table, $schema = null)
+    {
+        $sql = 'SELECT TABLES.TABLE_TYPE AS table_type,TABLES.AUTO_INCREMENT AS auto_increment,TABLES.ENGINE AS engine,TABLES.TABLE_COLLATION AS table_collation FROM INFORMATION_SCHEMA.TABLES WHERE ';
+        if ($schema) {
+            $sql .= "TABLES.TABLE_SCHEMA = '" . $schema . "' AND TABLES.TABLE_NAME = '" . $table . "'";
+        } else {
+            $sql .= "TABLES.TABLE_NAME = '" . $table . "'";
+        }
+
+        return $sql;
+    }
+
+    /**
+     * Generates SQL to add the table creation options.
+     *
+     * @param array $definition
+     *
+     * @return string
+     */
+    protected function _getTableOptions($definition)
+    {
+        if (isset($definition['options']) === true) {
+            $tableOptions = array();
+            $options = $definition['options'];
+
+            /*
+             * Check if there is an ENGINE option
+             */
+            if (isset($options['ENGINE']) === true &&
+                $options['ENGINE'] == true) {
+                $tableOptions[] = 'ENGINE=' . $options['ENGINE'];
+            }
+
+            /*
+             * Check if there is an AUTO_INCREMENT option
+             */
+            if (isset($options['AUTO_INCREMENT']) === true &&
+                $options['AUTO_INCREMENT'] == true) {
+                $tableOptions[] = 'AUTO_INCREMENT=' . $options['AUTO_INCREMENT'];
+            }
+
+            /*
+             * Check if there is a TABLE_COLLATION option
+             */
+            if (isset($options['TABLE_COLLATION']) === true &&
+                $options['TABLE_COLLATION'] == true) {
+                $collationParts = explode('_', $options['TABLE_COLLATION']);
+                $tableOptions[] = 'DEFAULT CHARSET=' . $collationParts[0];
+                $tableOptions[] = 'COLLATE=' . $options['TABLE_COLLATION'];
+            }
+
+            if (count($tableOptions) > 0) {
+                return implode(' ', $tableOptions);
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Generates SQL primary key a table.
+     *
+     * @param string $table
+     * @param string $schema
+     *
+     * @return string
+     */
+    public function getPrimaryKey($table, $schema = null)
+    {
+        $sql = "exec sp_pkeys @table_name = '{$table}'";
+        if ($schema) {
+            $sql .= ", @table_owner = '{$schema}'";
+        }
+
+        return $sql;
+    }
 }
