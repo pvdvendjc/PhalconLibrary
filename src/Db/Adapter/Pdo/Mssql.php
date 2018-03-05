@@ -300,6 +300,9 @@ class Mssql extends PhalconPdo implements AdapterInterface
      */
     public function query($sqlStatement, $bindParams = null, $bindTypes = null)
     {
+        // Replace the SQL statement in a where clause with language understood by MSSQL 2012 and later
+        $sqlStatement = str_replace('WHERE 1 ', 'WHERE 1 = 1 ', $sqlStatement);
+
         $eventsManager = $this->_eventsManager;
 
         /*
