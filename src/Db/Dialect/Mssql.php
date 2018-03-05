@@ -10,7 +10,7 @@ use Phalcon\Db\Dialect;
  * Djc/Phalcon\Db\Dialect\Sqlsrv
  * Generates database specific SQL for the MsSQL RDBMS.
  */
-class Sqlsrv extends Dialect
+class Mssq1 extends Dialect
 {
     /**
      * Escape Char.

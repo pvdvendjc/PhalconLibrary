@@ -5,10 +5,10 @@ namespace Djc\Phalcon\Db\Adapter\Pdo;
 use Phalcon\Db\Column;
 use Phalcon\Db\Adapter\Pdo as PhalconPdo;
 use Phalcon\Db\AdapterInterface;
-use Djc\Phalcon\Db\Result\PdoSqlsrv as ResultPdo;
+use Djc\Phalcon\Db\Result\PdoMssql as ResultPdo;
 
 /**
- * Phalcon\Db\Adapter\Pdo\Sqlsrv
+ * Djc\Phalcon\Db\Adapter\Pdo\Mssql
  * Specific functions for the MsSQL database system
  * <code>
  * $config = array(
@@ -18,16 +18,16 @@ use Djc\Phalcon\Db\Result\PdoSqlsrv as ResultPdo;
  * "username" => "sigma",
  * "password" => "secret"
  * );
- * $connection = new \Phalcon\Db\Adapter\Pdo\Sqlsrv($config);
+ * $connection = new \Djc\Phalcon\Db\Adapter\Pdo\Sqlsrv($config);
  * </code>.
  *
- * @property \Phalcon\Db\Dialect\Sqlsrv $_dialect
+ * @property \Djc\Phalcon\Db\Dialect\Mssql $_dialect
  */
-class Sqlsrv extends PhalconPdo implements AdapterInterface
+class Mssql extends PhalconPdo implements AdapterInterface
 {
 
     protected $_type = 'sqlsrv';
-    protected $_dialectType = 'sqlsrv';
+    protected $_dialectType = 'mssql';
 
     /**
      * This method is automatically called in Phalcon\Db\Adapter\Pdo constructor.
