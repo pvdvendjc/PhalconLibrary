@@ -2,6 +2,8 @@
 
 namespace Djc\Phalcon\Db\Result;
 
+use Phalcon\Db\Result\Pdo;
+
 /**
  * Djc\Phalcon\Db\Result\PdoMssql
  * Encapsulates the resultset internals

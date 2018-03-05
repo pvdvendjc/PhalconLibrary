@@ -7,10 +7,10 @@ use Phalcon\Db\Exception;
 use Phalcon\Db\Dialect;
 
 /**
- * Djc/Phalcon\Db\Dialect\Sqlsrv
+ * Djc/Phalcon\Db\Dialect\Mssql
  * Generates database specific SQL for the MsSQL RDBMS.
  */
-class Mssq1 extends Dialect
+class Mssql extends Dialect
 {
     /**
      * Escape Char.
