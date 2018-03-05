@@ -8,8 +8,6 @@
 
 namespace Djc\Phalcon\Services;
 
-use Horecatools\Modules\Base\Models\Acl;
-use Horecatools\Modules\Base\Models\AclItem;
 use Phalcon\Security\Exception;
 use Phalcon\Db\Exception as DbException;
 
