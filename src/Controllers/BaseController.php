@@ -220,7 +220,11 @@ class BaseController extends Controller
         foreach ($fields as $key => $field) {
             if (is_array($field)) {
                 if ($record->$key) {
-                    $subRecord = $this->_getDataRecord($record->$key, $field);
+                    if (is_array($record->$key)) {
+                        $subRecord = $record->$key;
+                    } else {
+                        $subRecord = $this->_getDataRecord($record->$key, $field);
+                    }
                     $dataRecord->$key = $subRecord;
                 }
             } else {

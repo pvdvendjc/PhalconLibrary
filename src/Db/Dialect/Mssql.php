@@ -568,7 +568,6 @@ class Mssql extends Dialect
         }
         $sql .= $indexSql;
 
-        error_log($sql);
         return $sql;
     }
 

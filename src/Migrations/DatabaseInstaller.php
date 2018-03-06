@@ -53,6 +53,11 @@ class DatabaseInstaller
         try {
             $migratesBase = $this->getMigrations('');
             $this->runMigrations($migratesBase, 1);
+            if (!$this->_session->has('user')) {
+                $user = User::findFirst(['userName = :admin:', 'bind' => ['admin' => 'admin']]);
+                $this->_session->set('user', $user);
+                $this->_session->set('userId', $user->id);
+            }
             foreach ($this->_modules as $module) {
                 $migrates = $this->getMigrations(ucfirst($module));
                 $this->runMigrations($migrates, 2);
@@ -67,18 +72,23 @@ class DatabaseInstaller
     public function updateDatabase()
     {
         try {
+            if (!$this->_session->has('user')) {
+                $user = User::findFirst(['userName = :admin:', 'bind' => ['admin' => 'admin']]);
+                $this->_session->set('user', $user);
+                $this->_session->set('userId', $user->id);
+            }
             $maxMigrationRun = Migration::maximum(['column' => 'migrationRun']) + 1;
-            echo $maxMigrationRun . PHP_EOL;
+            error_log('Migration run number -> ' . $maxMigrationRun);
             foreach ($this->_modules as $module) {
-                echo $module . ' -> ';
                 $migrates = $this->getMigrations(ucfirst($module));
-                echo count($migrates) . PHP_EOL;
                 $this->runMigrations($migrates, $maxMigrationRun);
+                error_log($module . ' is updated/installed');
             }
         } catch (Exception $ex) {
             error_log($ex->getMessage());
             return false;
         }
+        return true;
     }
 
     public function rollbackDatabase()
