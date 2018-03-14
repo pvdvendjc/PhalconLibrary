@@ -42,6 +42,7 @@ class BaseController extends Controller
     protected $_runAsAdmin = false;
     protected $_store = [];
     protected $_responseArray = ['success' => false, 'data' => [], 'total' => 0, 'errorMsg' => '', 'readTranslations' => false];
+    protected $_orderString = '';
 
     public $dateFormat = 'd-M-Y';
     public $timeFormat = 'H:i';
@@ -92,8 +93,14 @@ class BaseController extends Controller
         }
 
         if (array_key_exists('order', $this->_postFields)) {
-            $this->_model->orderField = $this->_postFields['order']['field'];
-            $this->_model->orderDirection = $this->_postFields['order']['direction'];
+            $orders = json_decode($this->_postFields['order'], true);
+            $orderString = '';
+            foreach ($orders as $order) {
+                $orderString .= $order['field'] . ' ' . $order['direction'] . ', ';
+            }
+            $this->_orderString = substr($orderString, 0 , -2);
+        } else {
+            $this->_orderString = $this->_model->orderField . ' ' . $this->_model->orderDirection;
         }
 
         if (array_key_exists('listFields', $this->_postFields)) {
@@ -176,7 +183,7 @@ class BaseController extends Controller
             }
             $bindArray[$filter['field']] = $filter['value'];
         }
-        $this->_filter = [$filterString, 'bind' => $bindArray, 'order' => $this->_model->orderField . ' ' . $this->_model->orderDirection];
+        $this->_filter = [$filterString, 'bind' => $bindArray, 'order' => $this->_orderString];
     }
 
     /**
@@ -446,13 +453,21 @@ class BaseController extends Controller
     public function deleteAction()
     {
         $pkField = $this->_model->primaryKey;
-        $record = $this->_model->findByPk($this->_postFields[$pkField], $pkField);
-        if ($record->delete()) {
-            $this->_responseArray['success'] = true;
+        if (!$this->beforeDeleteAction()) {
+            $this->_responseArray['success'] = false;
         } else {
-            $this->_responseArray['errorMsg'] = Utils::t('deleteError');
+            $record = $this->_model->findByPk($this->_postFields[$pkField], $pkField);
+            if ($record->delete()) {
+                $this->_responseArray['success'] = true;
+            } else {
+                $this->_responseArray['errorMsg'] = Utils::t('deleteError');
+            }
         }
         echo json_encode($this->_responseArray);
+    }
+
+    public function beforeDeleteAction() {
+        return true;
     }
 
     public function afterDeleteAction()

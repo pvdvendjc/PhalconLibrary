@@ -162,20 +162,20 @@ class AclService
      */
     public function aclLevel($userId, $groupIDs, $aclItemId)
     {
-        $params = ['aclItemId = :aclItemId: AND (userId = :userId: OR groupId IN({groupIds:array})',
+        $params = ['aclItemId = :aclItemId: AND (userId = :userId: OR groupId IN({groupIds:array}))',
             'bind' => [
                 'aclItemId' => $aclItemId,
                 'userId' => $userId,
                 'groupIds' => $groupIDs
             ],
-            'order' => 'level DESC'];
+            'order' => 'aclLevel DESC'];
 
         $highestAcl = $this->_aclModel->findFirst($params);
 
         if ($highestAcl === false) {
             $level = 0;
         } else {
-            $level = $highestAcl->level;
+            $level = $highestAcl->aclLevel;
         }
         return $level;
     }
