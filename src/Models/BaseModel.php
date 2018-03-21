@@ -69,22 +69,20 @@ class BaseModel extends Model
         $di = new FactoryDefault();
         $this->session = $di->getDefault()->get('session');
         if ($this->_modifiers) {
-            $this->_relatedFields['creator'] = ['fullName'];
-            $this->_relatedFields['modifier'] = ['fullName'];
+            $this->_relatedFields[] = 'creator';
+            $this->_relatedFields[] = 'modifier';
         }
         $connection = $this->getReadConnection();
-//        $this->_jsonFields = [];
         if ($connection->tableExists($this->getSource())) {
             $metaData = $this->getModelsMetaData();
             $this->_listFields = array_merge($metaData->getAttributes($this), $this->_relatedFields);
-//            foreach ($connection->describeColumns($this->getSource()) as $field) {
-//                if ($field->getType() === Column::TYPE_JSON) {
-//                    $this->_jsonFields[] = $field->getName();
-//                }
-//            }
         } else {
             $this->_listFields = [];
         }
+    }
+
+    public function afterFetch() {
+        $this->softDeleted = boolval($this->softDeleted);
     }
 
     public function beforeValidation()

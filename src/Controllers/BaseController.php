@@ -206,7 +206,7 @@ class BaseController extends Controller
                 }
             }
             foreach ($this->_model->getBoolFields() as $boolField) {
-                $record->$boolField = $record->$boolField === '0' ? false : true;
+                $record->$boolField = boolval($record->$boolField);
             }
             $dataRecord = $this->_getDataRecord($record, $this->_model->getListFields($getRelated));
             $returnRecords[$recordKey] = $dataRecord;
