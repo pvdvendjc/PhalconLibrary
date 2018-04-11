@@ -25,6 +25,7 @@ class DatabaseInstaller
 
     public function __construct()
     {
+        set_time_limit(1000);   // needed for larger tables
         $di = new FactoryDefault();
         try {
             $this->_connection = $di->getDefault()->get('db');

@@ -104,7 +104,7 @@ class BaseController extends Controller
         }
 
         if (array_key_exists('listFields', $this->_postFields)) {
-            $this->_model->setListFields($this->_postFields['listFields']);
+            $this->_model->setListFields(json_decode($this->_postFields['listFields']));
         }
 
         if (array_key_exists('filters', $this->_postFields)) {

@@ -278,14 +278,14 @@ class Mssql extends Dialect
             $sql .= ' IDENTITY(1,1)';
         }
 
-        if ($column->isFirst()) {
-            $sql .= ' FIRST';
-        } else {
-            $afterPosition = $column->getAfterPosition();
-            if ($afterPosition) {
-                $sql .= ' AFTER ' . $afterPosition;
-            }
-        }
+//        if ($column->isFirst()) {
+//            $sql .= ' FIRST';
+//        } else {
+//            $afterPosition = $column->getAfterPosition();
+//            if ($afterPosition) {
+//                $sql .= ' AFTER [' . $afterPosition . ']';
+//            }
+//        }
 
         return $sql;
     }
@@ -304,14 +304,14 @@ class Mssql extends Dialect
     {
         $sql = 'ALTER TABLE ' . $this->prepareTable($tableName, $schemaName) . ' ALTER COLUMN [' . $column->getName() . '] ' . $this->getColumnDefinition($column);
 
-        if ($column->hasDefault()) {
-            $defaultValue = $column->getDefault();
-            if (strpos(strtoupper($defaultValue), 'CURRENT_TIMESTAMP') !== false) {
-                $sql .= ' DEFAULT CURRENT_TIMESTAMP';
-            } else {
-                $sql .= ' DEFAULT "' . addcslashes($defaultValue, '"') . '"';
-            }
-        }
+//        if ($column->hasDefault()) {
+//            $defaultValue = $column->getDefault();
+//            if (strpos(strtoupper($defaultValue), 'CURRENT_TIMESTAMP') !== false) {
+//                $sql .= ' DEFAULT CURRENT_TIMESTAMP';
+//            } else {
+//                $sql .= ' DEFAULT "' . addcslashes($defaultValue, '"') . '"';
+//            }
+//        }
 
         if ($column->isNotNull()) {
             $sql .= ' NOT NULL';
@@ -760,12 +760,16 @@ class Mssql extends Dialect
      */
     public function describeReferences($table, $schema = null)
     {
-        $sql = 'SELECT TABLE_NAME,COLUMN_NAME,CONSTRAINT_NAME,REFERENCED_TABLE_SCHEMA,REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_NAME IS NOT NULL AND ';
-        if ($schema) {
-            $sql .= "CONSTRAINT_SCHEMA = '" . $schema . "' AND TABLE_NAME = '" . $table . "'";
-        } else {
-            $sql .= "TABLE_NAME = '" . $table . "'";
-        }
+        $sql = "SELECT OBJECT_NAME(f.parent_object_id) TABLE_NAME, COL_NAME(fc.parent_object_id, fc.parent_column_id) COLUMN_NAME FROM sys.foreign_keys AS f " .
+            "INNER JOIN sys.foreign_key_columns AS fc ON f.OBJECT_ID = fc.constraint_object_id " .
+            "INNER JOIN sys.tables t ON t.OBJECT_ID = fc.referenced_object_id " .
+            "WHERE OBJECT_NAME(f.referenced_object_id) = '" . $table . "'";
+//        $sql = 'SELECT TABLE_NAME,COLUMN_NAME,CONSTRAINT_NAME,REFERENCED_TABLE_SCHEMA,REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_NAME IS NOT NULL AND ';
+//        if ($schema) {
+//            $sql .= "CONSTRAINT_SCHEMA = '" . $schema . "' AND TABLE_NAME = '" . $table . "'";
+//        } else {
+//            $sql .= "TABLE_NAME = '" . $table . "'";
+//        }
 
         return $sql;
     }

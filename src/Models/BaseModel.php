@@ -68,10 +68,6 @@ class BaseModel extends Model
     {
         $di = new FactoryDefault();
         $this->session = $di->getDefault()->get('session');
-        if ($this->_modifiers) {
-            $this->_relatedFields[] = 'creator';
-            $this->_relatedFields[] = 'modifier';
-        }
         $connection = $this->getReadConnection();
         if ($connection->tableExists($this->getSource())) {
             $metaData = $this->getModelsMetaData();
