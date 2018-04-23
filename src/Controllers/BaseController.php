@@ -430,7 +430,7 @@ class BaseController extends Controller
         $record = $this->_model->findByPk($this->_postFields[$pkField], $pkField);
         $this->_model->formatFields($this->_postFields);
         if ($this->beforeSaveAction($this->_responseArray)) {
-            $record->update($this->_postFields);
+            $record->assign($this->_postFields);
             if ($record->save()) {
                 $this->_responseArray['success'] = true;
             } else {
