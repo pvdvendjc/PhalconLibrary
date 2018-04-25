@@ -59,10 +59,15 @@ class DatabaseInstaller
                 $this->_session->set('user', $user);
                 $this->_session->set('userId', $user->id);
             }
+            $migrates = [];
             foreach ($this->_modules as $module) {
-                $migrates = $this->getMigrations(ucfirst($module));
-                $this->runMigrations($migrates, 2);
+                $migrates = array_merge($migrates, $this->getMigrations(ucfirst($module)));
             }
+            ksort($migrates);
+            foreach ($migrates as $key => $migrate) {
+                error_log($key);
+            }
+            $this->runMigrations($migrates, 2);
         } catch (Exception $ex) {
             error_log($ex->getMessage());
             return false;
@@ -401,7 +406,7 @@ class DatabaseInstaller
                     throw new Exception('Migration class cannot be found ' . $className . ' at ' . $path . $fileName);
                 }
                 $migrate = new $className();
-                $migrates[] = $migrate;
+                $migrates[$fileName] = $migrate;
             }
         }
 
