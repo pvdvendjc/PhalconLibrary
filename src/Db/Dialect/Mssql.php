@@ -266,7 +266,7 @@ class Mssql extends Dialect
             if (strpos(strtoupper($defaultValue), 'CURRENT_TIMESTAMP') !== false) {
                 $sql .= ' DEFAULT CURRENT_TIMESTAMP';
             } else {
-                $sql .= ' DEFAULT "' . addcslashes($defaultValue, '"') . '"';
+                $sql .= ' DEFAULT (' . addcslashes($defaultValue, '"') . ')';
             }
         }
 
