@@ -54,11 +54,11 @@ class DatabaseInstaller
         try {
             $migratesBase = $this->getMigrations('');
             $this->runMigrations($migratesBase, 1);
-            if (!$this->_session->has('user')) {
-                $user = User::findFirst(['userName = :admin:', 'bind' => ['admin' => 'admin']]);
-                $this->_session->set('user', $user);
-                $this->_session->set('userId', $user->id);
-            }
+//            if (!$this->_session->has('user')) {
+//                $user = User::findFirst(['userName = :admin:', 'bind' => ['admin' => 'admin']]);
+//                $this->_session->set('user', $user);
+//                $this->_session->set('userId', $user->id);
+//            }
             $migrates = [];
             foreach ($this->_modules as $module) {
                 $migrates = array_merge($migrates, $this->getMigrations(ucfirst($module)));
