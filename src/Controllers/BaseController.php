@@ -402,6 +402,7 @@ class BaseController extends Controller
                     }
                 } else {
                     $this->_responseArray['newId'] = $this->_model->id;
+                    $this->_responseArray['data']['records'] = $this->_formatRecords([$this->_model]);
                     if ($aclField === false) {
                         $this->_responseArray['newAclId'] = false;
                     } else {
@@ -433,6 +434,7 @@ class BaseController extends Controller
             $record->assign($this->_postFields);
             if ($record->save()) {
                 $this->_responseArray['success'] = true;
+                $this->_responseArray['data']['records'] = $this->_formatRecords([$record]);
             } else {
                 $this->_responseArray['errorMsg'] = Utils::t('updateError');
             }
