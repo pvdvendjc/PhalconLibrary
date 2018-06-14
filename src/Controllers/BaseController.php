@@ -98,7 +98,7 @@ class BaseController extends Controller
             foreach ($orders as $order) {
                 $orderString .= $order['field'] . ' ' . $order['direction'] . ', ';
             }
-            $this->_orderString = substr($orderString, 0 , -2);
+            $this->_orderString = substr($orderString, 0, -2);
         } else {
             $this->_orderString = $this->_model->orderField . ' ' . $this->_model->orderDirection;
         }
@@ -146,7 +146,7 @@ class BaseController extends Controller
     {
         $bindArray = [];
         $filterString = '';
-        foreach ($this->_filters as $filter) {
+        foreach ($this->_filters as $key => $filter) {
             if (strlen($filterString) > 0 && array_key_exists('whereClause', $filter)) {
                 $filterString .= ' ' . strtoupper($filter['whereClause']) . ' ';
             } elseif (strlen($filterString) > 0) {
@@ -179,9 +179,9 @@ class BaseController extends Controller
                     break;
             }
             if ($addValue !== false) {
-                $filterString .= ':' . $filter['field'] . ':';
+                $filterString .= ':' . $filter['field'] . '_' . $key . ':';
             }
-            $bindArray[$filter['field']] = $filter['value'];
+            $bindArray[$filter['field'] . '_' . $key] = $filter['value'];
         }
         $this->_filter = [$filterString, 'bind' => $bindArray, 'order' => $this->_orderString];
     }
@@ -468,7 +468,8 @@ class BaseController extends Controller
         echo json_encode($this->_responseArray);
     }
 
-    public function beforeDeleteAction() {
+    public function beforeDeleteAction()
+    {
         return true;
     }
 
