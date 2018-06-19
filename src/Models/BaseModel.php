@@ -87,6 +87,7 @@ class BaseModel extends Model
         $this->session = $di->getDefault()->get('session');
         if ($this->_timeStamps) {
             if ($this->createdAt == 0) {
+		$this->softDeleted = 0;
                 $this->createdAt = time();
                 $this->softDeleted = 0;
             }
