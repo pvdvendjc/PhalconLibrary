@@ -88,6 +88,7 @@ class BaseModel extends Model
         if ($this->_timeStamps) {
             if ($this->createdAt == 0) {
                 $this->createdAt = time();
+                $this->softDeleted = 0;
             }
             if ($this->setModified)
                 $this->modifiedAt = time();
@@ -103,6 +104,8 @@ class BaseModel extends Model
                     $this->modifierId = $currentUserId;
             }
         }
+
+
     }
 
     /**
