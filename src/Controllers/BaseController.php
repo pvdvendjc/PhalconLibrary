@@ -393,6 +393,9 @@ class BaseController extends Controller
             if (!$saveSuccess) {
                 $this->_responseArray['success'] = false;
                 $this->_responseArray['errorMsg'] = Utils::t('errorCreateRecord');
+                foreach ($this->_model->getMessages() as $message) {
+                    error_log($message);
+                }
             } else {
                 $this->_responseArray['success'] = true;
                 if (!$this->afterCreateAction($this->_responseArray)) {
@@ -436,6 +439,9 @@ class BaseController extends Controller
                 $this->_responseArray['success'] = true;
                 $this->_responseArray['data']['records'] = $this->_formatRecords([$record]);
             } else {
+                foreach ($record->getMessages() as $message) {
+                    error_log($message);
+                }
                 $this->_responseArray['errorMsg'] = Utils::t('updateError');
             }
         }
@@ -462,6 +468,9 @@ class BaseController extends Controller
             if ($record->delete()) {
                 $this->_responseArray['success'] = true;
             } else {
+                foreach ($record->getMessages() as $message) {
+                    error_log($message);
+                }
                 $this->_responseArray['errorMsg'] = Utils::t('deleteError');
             }
         }
@@ -485,6 +494,9 @@ class BaseController extends Controller
         if ($record->save()) {
             $this->_responseArray['success'] = true;
         } else {
+            foreach ($record->getMessages() as $message) {
+                error_log($message);
+            }
             $this->_responseArray['errorMsg'] = Utils::t('restoreError');
         }
         echo json_encode($this->_responseArray);
