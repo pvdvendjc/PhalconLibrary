@@ -326,12 +326,12 @@ class BaseModel extends Model
         } elseif (is_array($parameters) === true) {
             if (isset($parameters[0]) === true && strpos($parameters[0], $deletedField) === false) {
                 if (strlen($parameters[0]) === 0) {
-                    $parameters[0] = '1';
+                    $parameters[0] = '1 = 1';
                 }
                 $parameters[0] .= ' AND ' . $deletedField . ' = ' . $value;
             } elseif (isset($parameters['conditions']) === true && strpos($parameters['conditions'], $deletedField) === false) {
                 if (strlen($parameters['conditions']) === 0) {
-                    $parameters['conditions'] = '1';
+                    $parameters['conditions'] = '1 = 1';
                 }
                 $parameters['conditions'] .= ' AND ' . $deletedField . ' = ' . $value;
             }

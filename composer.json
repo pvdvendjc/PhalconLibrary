@@ -4,14 +4,5 @@
     "psr-4": {
       "Djc\\Phalcon\\": "src/"
     }
-  },
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/dnapierata/phalcon-sqlsrv"
-    }
-  ],
-  "require": {
-    "dnapierata/phalcon-sqlsrv": "dev-master"
   }
 }
