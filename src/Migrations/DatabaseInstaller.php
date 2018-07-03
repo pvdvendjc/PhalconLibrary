@@ -54,11 +54,9 @@ class DatabaseInstaller
         try {
             $migratesBase = $this->getMigrations('');
             $this->runMigrations($migratesBase, 1);
-//            if (!$this->_session->has('user')) {
-//                $user = User::findFirst(['userName = :admin:', 'bind' => ['admin' => 'admin']]);
-//                $this->_session->set('user', $user);
-//                $this->_session->set('userId', $user->id);
-//            }
+            if (!$this->_session->has('user')) {
+                return false;
+            }
             $migrates = [];
             foreach ($this->_modules as $module) {
                 $migrates = array_merge($migrates, $this->getMigrations(ucfirst($module)));
@@ -79,9 +77,7 @@ class DatabaseInstaller
     {
         try {
             if (!$this->_session->has('user')) {
-                $user = User::findFirst(['userName = :admin:', 'bind' => ['admin' => 'admin']]);
-                $this->_session->set('user', $user);
-                $this->_session->set('userId', $user->id);
+                return false;
             }
             $maxMigrationRun = Migration::maximum(['column' => 'migrationRun']) + 1;
             error_log('Migration run number -> ' . $maxMigrationRun);
