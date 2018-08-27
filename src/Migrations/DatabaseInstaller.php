@@ -8,6 +8,8 @@
 namespace Djc\Phalcon\Migrations;
 
 use Djc\Phalcon\Models\Migration;
+use Phalcon\Di;
+use SalesApp\Modules\Users\Models\User;
 
 use Phalcon\Di\FactoryDefault;
 use Phalcon\Exception;
@@ -19,17 +21,19 @@ class DatabaseInstaller
     protected $_modules;
     protected $_session;
     protected $_currentModule;
+    protected $_userModel;
 
     public $firstVersion = false;
     public $module = '';
 
-    public function __construct()
+    public function __construct($userModel = null)
     {
         set_time_limit(1000);   // needed for larger tables
         $di = new FactoryDefault();
         try {
             $this->_connection = $di->getDefault()->get('db');
             $this->_session = $di->getDefault()->get('session');
+            $this->_userModel = $userModel;
         } catch (Exception $ex) {
             error_log($ex->getMessage());
         }
@@ -54,9 +58,11 @@ class DatabaseInstaller
         try {
             $migratesBase = $this->getMigrations('');
             $this->runMigrations($migratesBase, 1);
-            if (!$this->_session->has('user')) {
-                return false;
-            }
+//            if (!$this->_session->has('user')) {
+//                $admin = $this->_userModel->findFirst(['userName = :userName:', 'bind' => ['userName' => 'admin']]);
+//                $this->_session->set('user', $admin);
+//                $this->_session->set('userSettings', $admin->getSettings());
+//            }
             $migrates = [];
             foreach ($this->_modules as $module) {
                 $migrates = array_merge($migrates, $this->getMigrations(ucfirst($module)));
@@ -77,7 +83,9 @@ class DatabaseInstaller
     {
         try {
             if (!$this->_session->has('user')) {
-                return false;
+                $admin = $this->_userModel->findFirst(['userName = :userName:', 'bind' => ['userName' => 'admin']]);
+                $this->_session->set('user', $admin);
+                $this->_session->set('userSettings', $admin->getSettings());
             }
             $maxMigrationRun = Migration::maximum(['column' => 'migrationRun']) + 1;
             error_log('Migration run number -> ' . $maxMigrationRun);
@@ -430,6 +438,9 @@ class DatabaseInstaller
             }
             if (!$migrationRecord) {
                 $response = $migration->morph();
+                $di = Di::getDefault();
+                $modelsMetadata = $di->getShared('modelsMetadata');
+                $modelsMetadata->reset();
                 $migration->up();
                 $migrationRecord = new Migration();
                 $migrationRecord->id = $migrationRecord->getUUID();

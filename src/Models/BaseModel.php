@@ -77,7 +77,8 @@ class BaseModel extends Model
         }
     }
 
-    public function afterFetch() {
+    public function afterFetch()
+    {
         $this->softDeleted = boolval($this->softDeleted);
     }
 
@@ -87,7 +88,6 @@ class BaseModel extends Model
         $this->session = $di->getDefault()->get('session');
         if ($this->_timeStamps) {
             if ($this->createdAt == 0) {
-		$this->softDeleted = 0;
                 $this->createdAt = time();
                 $this->softDeleted = 0;
             }
@@ -282,7 +282,8 @@ class BaseModel extends Model
         return parent::findFirst($parameters);
     }
 
-    public function restore() {
+    public function restore()
+    {
         $this->softDeleted = 0;
         return $this->save();
     }
