@@ -405,7 +405,9 @@ class BaseController extends Controller
                     }
                 } else {
                     $this->_responseArray['newId'] = $this->_model->id;
-                    $this->_responseArray['data']['records'] = $this->_formatRecords([$this->_model]);
+                    $pkField = $this->_model->primaryKey;
+                    $record = $this->_model->findByPk($this->_model->id, $pkField);
+                    $this->_responseArray['data']['records'] = $this->_formatRecords([$record]);
                     if ($aclField === false) {
                         $this->_responseArray['newAclId'] = false;
                     } else {
@@ -437,6 +439,7 @@ class BaseController extends Controller
             $record->assign($this->_postFields);
             if ($record->save()) {
                 $this->_responseArray['success'] = true;
+                $record = $this->_model->findByPk($record->id, $pkField);
                 $this->_responseArray['data']['records'] = $this->_formatRecords([$record]);
             } else {
                 foreach ($record->getMessages() as $message) {
