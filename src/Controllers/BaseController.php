@@ -92,8 +92,8 @@ class BaseController extends Controller
             throw new Exception($e->getMessage());
         }
 
-        if (array_key_exists('order', $this->_postFields)) {
-            $orders = json_decode($this->_postFields['order'], true);
+        if (array_key_exists('sortOrder', $this->_postFields)) {
+            $orders = json_decode($this->_postFields['sortOrder'], true);
             $orderString = '';
             foreach ($orders as $order) {
                 $orderString .= $order['field'] . ' ' . $order['direction'] . ', ';
