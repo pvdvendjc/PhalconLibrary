@@ -25,6 +25,7 @@ class BaseModel extends Model
     protected $_modifiers = true;
     protected $_softDeletes = true;
     protected $_timeStamps = true;
+    public static $_cacheAble = false;
 
     // Arrays for output to frontend
     protected $_dateFields = [];
@@ -43,6 +44,7 @@ class BaseModel extends Model
     public $aclField = 'aclItemId';
     public $primaryKey = 'id';
     public $setModified = true;
+    public $cacheAble = false;
 
     // General fields
     public $id;
@@ -203,7 +205,26 @@ class BaseModel extends Model
     public static function find($parameters = null)
     {
         $parameters = self::softDeleteFetch($parameters);
-        return parent::find($parameters);
+        $records = self::getCache($parameters);
+        if ($records === null) {
+            return parent::find($parameters);
+        } else {
+            return $records;
+        }
+    }
+
+    public static function getCache(&$parameters) {
+        $class = get_called_class();
+        $source = (new $class)->getSource();
+        $records = null;
+        if ((new $class)->cacheAble) {
+            $parameters = self::cachedFetch($parameters, $source);
+            $di = new FactoryDefault();
+            $cache = $di->getDefault()->get('modelsCache');
+            $key = $source . self::_createKey($parameters);
+            $records = $cache->get($key);
+        }
+        return $records;
     }
 
     /**
@@ -339,6 +360,38 @@ class BaseModel extends Model
         }
 
         return $parameters;
+    }
+
+    public static function cachedFetch($parameters = null, $source = '') {
+        $key = $source . self::_createKey($parameters);
+
+        $di = new FactoryDefault();
+        $cache = $di->getDefault()->get('modelsCache');
+
+        if ($parameters === null) {
+            $parameters = ['cache' => ['key' => $key]];
+        } elseif (is_string($parameters)) {
+            $parameters = ['cache' => ['key' => $key], $parameters];
+        } elseif (is_array($parameters)) {
+            $parameters['cache'] = ['key' => $key];
+        }
+
+        return $parameters;
+    }
+
+    protected static function _createKey($parameters)
+    {
+        $uniqueKey = array();
+        foreach ($parameters as $key => $value) {
+            if (is_scalar($value)) {
+                $uniqueKey[] = $key . ':' . $value;
+            } else {
+                if (is_array($value)) {
+                    $uniqueKey[] = $key . ':[' . self::_createKey($value) .']';
+                }
+            }
+        }
+        return join(',', $uniqueKey);
     }
 
     public function setListFields($fields)

@@ -397,6 +397,9 @@ class BaseController extends Controller
                     error_log($message);
                 }
             } else {
+                if ($this->_model->cacheAble) {
+                    $this->removeCache();
+                }
                 $this->_responseArray['success'] = true;
                 if (!$this->afterCreateAction($this->_responseArray)) {
                     $this->_responseArray['success'] = false;
@@ -441,6 +444,9 @@ class BaseController extends Controller
                 $this->_responseArray['success'] = true;
                 $record = $this->_model->findByPk($record->id, $pkField);
                 $this->_responseArray['data']['records'] = $this->_formatRecords([$record]);
+                if ($this->_model->cacheAble) {
+                    $this->removeCache();
+                }
             } else {
                 foreach ($record->getMessages() as $message) {
                     error_log($message);
@@ -470,6 +476,9 @@ class BaseController extends Controller
             $record = $this->_model->findByPk($this->_postFields[$pkField], $pkField);
             if ($record->delete()) {
                 $this->_responseArray['success'] = true;
+                if ($this->_model->cacheAble) {
+                    $this->removeCache();
+                }
             } else {
                 foreach ($record->getMessages() as $message) {
                     error_log($message);
@@ -513,6 +522,17 @@ class BaseController extends Controller
     public function keepaliveAction()
     {
         return json_encode(array('success' => true, 'message' => 'KAL called', 'sessionMaxLifeTime' => ini_get('session.gc_maxlifetime')));
+    }
+
+    public function removeCache() {
+        $cache = $this->getDI()->get('modelsCache');
+        $source = $this->_model->getSource();
+        $keys = $cache->queryKeys();
+        foreach ($keys as $key) {
+            if (substr($key, 0, strlen($source)) === $source) {
+                $cache->delete($key);
+            }
+        }
     }
 
 }
