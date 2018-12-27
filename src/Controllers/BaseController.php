@@ -174,7 +174,7 @@ class BaseController extends Controller
                     $filterString .= '<';
                     break;
                 case 'IN':
-                    $filterString .= ' IN({' . $filter['field'] . ':array})';
+                    $filterString .= ' IN({' . $filter['field'] . '_' . $key . ':array})';
                     $addValue = false;
                     break;
             }

@@ -214,6 +214,7 @@ class BaseModel extends Model
     }
 
     public static function getCache(&$parameters) {
+        return null;
         $class = get_called_class();
         $source = (new $class)->getSource();
         $records = null;
