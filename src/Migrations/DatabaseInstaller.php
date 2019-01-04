@@ -313,7 +313,7 @@ class DatabaseInstaller
 
                 foreach ($localReferences as $referenceName => $reference) {
                     if (!isset($references[$referenceName])) {
-                        $this->_connection->dropForeignKey($tableName, null, $referenceName);
+                        //$this->_connection->dropForeignKey($tableName, null, $referenceName);
                     }
                 }
             }
@@ -372,7 +372,7 @@ class DatabaseInstaller
                 }
                 foreach ($localIndexes as $indexName => $indexColumns) {
                     if (!isset($indexes[$indexName])) {
-                        $this->_connection->dropIndex($tableName, null, $indexName);
+                        //$this->_connection->dropIndex($tableName, null, $indexName);
                     }
                 }
             }
