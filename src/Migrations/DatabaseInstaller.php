@@ -313,7 +313,7 @@ class DatabaseInstaller
 
                 foreach ($localReferences as $referenceName => $reference) {
                     if (!isset($references[$referenceName])) {
-                        //$this->_connection->dropForeignKey($tableName, null, $referenceName);
+                        $this->_connection->dropForeignKey($tableName, null, $referenceName);
                     }
                 }
             }

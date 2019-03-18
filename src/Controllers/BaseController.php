@@ -330,6 +330,11 @@ class BaseController extends Controller
     {
         $this->makeFilter();
         $recordStore = $this->_model->find($this->_filter);
+        $store = [];
+        foreach ($recordStore as $record) {
+            $store[] = $record;
+        }
+        $this->afterStoreAction($this->_responseArray, $this->_postFields, $store);
         if (array_key_exists('valueField', $this->_postFields)) {
             $valueField = $this->_postFields['valueField'];
         } else {
@@ -474,6 +479,12 @@ class BaseController extends Controller
             $this->_responseArray['success'] = false;
         } else {
             $record = $this->_model->findByPk($this->_postFields[$pkField], $pkField);
+            // Workaround for softDeletes on mySQL with boolean fields. Translation form true to 1 and false to 0 is not automatically done
+            if (count($this->_model->getBoolFields()) > 0) {
+                $fields = $record->toArray();
+                $record->formatFields($fields);
+                $record->update($fields);
+            }
             if ($record->delete()) {
                 $this->_responseArray['success'] = true;
                 if ($this->_model->cacheAble) {
