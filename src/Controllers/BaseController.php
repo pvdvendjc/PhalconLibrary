@@ -350,7 +350,7 @@ class BaseController extends Controller
         if ($this->_postFields['useSelectValue'] === 'Y') {
             $dataRecords[] = ['value' => '', 'label' => Utils::t('useSelectValue')];
         }
-        foreach ($recordStore as $record) {
+        foreach ($store as $record) {
             $dataRecord = ['value' => $record->{$valueField}];
             $label = '';
             for ($i = 1; $i <= count($labelFields); $i++) {
