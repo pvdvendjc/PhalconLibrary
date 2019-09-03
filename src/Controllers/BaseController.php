@@ -184,6 +184,17 @@ class BaseController extends Controller
             $bindArray[$filter['field'] . '_' . $key] = $filter['value'];
         }
         $this->_filter = [$filterString, 'bind' => $bindArray, 'order' => $this->_orderString];
+
+        if (array_key_exists('limit', $this->_postFields)) {
+            $limit = json_decode($this->_postFields['limit']);
+            $this->_filter['limit'] = $limit->records;
+            $this->_filter['offset'] = $limit->offset;
+        }
+
+        if (array_key_exists('distinct', $this->_postFields)) {
+            $this->_filter['group'] = $this->_postFields['distinct'];
+        }
+
     }
 
     /**

@@ -9,7 +9,6 @@ namespace Djc\Phalcon\Migrations;
 
 use Djc\Phalcon\Models\Migration;
 use Phalcon\Di;
-use SalesApp\Modules\Users\Models\User;
 
 use Phalcon\Di\FactoryDefault;
 use Phalcon\Exception;
