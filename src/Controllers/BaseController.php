@@ -366,7 +366,12 @@ class BaseController extends Controller
             $label = '';
             for ($i = 1; $i <= count($labelFields); $i++) {
                 $labelField = $labelFields[$i - 1];
-                $label .= $record->{$labelField};
+                $labelArray = explode('->', $labelField);
+                $value = $record;
+                foreach ($labelArray as $tmpLabel) {
+                    $value = $value->{$tmpLabel};
+                }
+                $label .= $value;
                 if ($i < count($labelFields)) {
                     $label .= ' ' . $labelSeparator . ' ';
                 }
@@ -547,12 +552,14 @@ class BaseController extends Controller
     }
 
     public function removeCache() {
-        $cache = $this->getDI()->get('modelsCache');
-        $source = $this->_model->getSource();
-        $keys = $cache->queryKeys();
-        foreach ($keys as $key) {
-            if (substr($key, 0, strlen($source)) === $source) {
-                $cache->delete($key);
+        if ($this->getDI()->get('modelsCache')) {
+            $cache = $this->getDI()->get('modelsCache');
+            $source = $this->_model->getSource();
+            $keys = $cache->queryKeys();
+            foreach ($keys as $key) {
+                if (substr($key, 0, strlen($source)) === $source) {
+                    $cache->delete($key);
+                }
             }
         }
     }

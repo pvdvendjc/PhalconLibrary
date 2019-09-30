@@ -161,21 +161,25 @@ class BaseModel extends Model
                 'size' => 38,
                 'notNull' => false,
             ));
-            $foreignKeys[] = new Reference($tableName . 'creatorRef', array(
-                'referencedTable' => 'baseUsers',
-                'columns' => array('creatorId'),
-                'referencedColumns' => array('id')
-            ));
+            if ($this->getSource() !== 'baseUsers') {
+                $foreignKeys[] = new Reference($tableName . 'creatorRef', array(
+                    'referencedTable' => 'baseUsers',
+                    'columns' => array('creatorId'),
+                    'referencedColumns' => array('id')
+                ));
+            }
             $columns[] = new Column('modifierId', array(
                 'type' => Column::TYPE_CHAR,
                 'size' => 38,
                 'notNull' => false,
             ));
-            $foreignKeys[] = new Reference($tableName . 'modifierRef', array(
-                'referencedTable' => 'baseUsers',
-                'columns' => array('modifierId'),
-                'referencedColumns' => array('id')
-            ));
+            if ($this->getSource() !== 'baseUsers') {
+                $foreignKeys[] = new Reference($tableName . 'modifierRef', array(
+                    'referencedTable' => 'baseUsers',
+                    'columns' => array('modifierId'),
+                    'referencedColumns' => array('id')
+                ));
+            }
         }
 
         $definition['columns'] = $columns;
