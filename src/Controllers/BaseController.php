@@ -204,7 +204,7 @@ class BaseController extends Controller
      * @param boolean $getRelated
      * @return array
      */
-    private function _formatRecords($records, $getRelated = true)
+    protected function _formatRecords($records, $getRelated = true)
     {
         $returnRecords = [];
         foreach ($records as $recordKey => $record) {
@@ -232,7 +232,7 @@ class BaseController extends Controller
      * @param array $fields
      * @return \stdClass
      */
-    private function _getDataRecord($record, $fields)
+    protected function _getDataRecord($record, $fields)
     {
         $dataRecord = new \stdClass();
         foreach ($fields as $key => $field) {
@@ -552,7 +552,7 @@ class BaseController extends Controller
     }
 
     public function removeCache() {
-        if ($this->getDI()->get('modelsCache')) {
+        if ($this->getDI()->has('modelsCache')) {
             $cache = $this->getDI()->get('modelsCache');
             $source = $this->_model->getSource();
             $keys = $cache->queryKeys();
