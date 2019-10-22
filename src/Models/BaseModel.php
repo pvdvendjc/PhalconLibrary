@@ -195,6 +195,7 @@ class BaseModel extends Model
     {
         $class = get_called_class();
         $classObject = new $class();
+        $classObject->initialize();
         return $classObject->_softDeletes;
     }
 
