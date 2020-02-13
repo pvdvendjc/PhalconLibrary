@@ -382,7 +382,7 @@ class BaseController extends Controller
         if (!$this->afterDropDownAction($this->_responseArray, $this->_postFields, $dataRecords)) {
             $this->_responseArray['success'] = false;
             if (strlen($this->_responseArray['errorMsg']) === 0) {
-                $this->_responseArray['errorMsg'] = Utils::t('errorBeforeStore');
+                $this->_responseArray['errorMsg'] = Utils::t('errorAfterDropDown');
             }
         } else {
             $this->_responseArray['data']['records'] = $dataRecords;
