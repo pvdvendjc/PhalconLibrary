@@ -555,7 +555,7 @@ class BaseController extends Controller
         if ($this->getDI()->has('modelsCache')) {
             $cache = $this->getDI()->get('modelsCache');
             $source = $this->_model->getSource();
-            $keys = $cache->queryKeys();
+            $keys = $cache->getAdapter()->getKeys();
             foreach ($keys as $key) {
                 if (substr($key, 0, strlen($source)) === $source) {
                     $cache->delete($key);
