@@ -205,17 +205,18 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return \Phalcon\Mvc\Model\ResultsetInterface
+     * @return Model\ResultsetInterface
      */
-    public static function find($parameters = null)
+    public static function find($parameters = null): Model\ResultsetInterface
     {
         $parameters = self::softDeleteFetch($parameters);
-        $records = self::getCache($parameters);
-        if ($records === null) {
-            return parent::find($parameters);
-        } else {
-            return $records;
-        }
+        return parent::find($parameters);
+//        $records = self::getCache($parameters);
+//        if ($records === null) {
+//            return parent::find($parameters);
+//        } else {
+//            return $records;
+//        }
     }
 
     public static function getCache(&$parameters) {
@@ -239,9 +240,9 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return \Phalcon\Mvc\Model\ResultsetInterface
+     * @return Model\ResultsetInterface
      */
-    public static function findDeleted($parameters = null)
+    public static function findDeleted($parameters = null): Model\ResultsetInterface
     {
         $parameters = self::softDeleteFetch($parameters, 1);
         return parent::find($parameters);
@@ -253,10 +254,10 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return \Phalcon\Mvc\Model\ResultsetInterface
+     * @return Model\ResultsetInterface
      */
 
-    public static function findAll($parameters = null)
+    public static function findAll($parameters = null): Model\ResultsetInterface
     {
         return parent::find($parameters);
     }
@@ -281,7 +282,7 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return \Phalcon\Mvc\Model\ResultsetInterface
+     * @return Model\ResultsetInterface
      */
     public static function findFirstDeleted($parameters = null)
     {
@@ -295,7 +296,7 @@ class BaseModel extends Model
      * @access public
      * @static
      * @param array|string $parameters Query parameters
-     * @return \Phalcon\Mvc\Model\ResultsetInterface
+     * @return Model\ResultsetInterface
      */
 
     public static function findFirstAll($parameters = null)

@@ -21,3 +21,6 @@ Check the var's you want to override globally.
 If you want to use the AclService from the Library you have to setup this in you BaseController
 Fill the var _aclService with a construct of the Djc\Phalcon\Services\AclService with the correct classes for the AclItem and Acl
 
+**Available for**   
+Phalcon 3.4 -> branch phalcon3  
+Phalcon 4.0 -> branch phalcon4

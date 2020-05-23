@@ -159,6 +159,21 @@ class DatabaseInstaller
     }
 
     /**
+     * Run down() after removing a migration
+     * @return bool
+     */
+    public function down() {
+        if ($this->firstVersion) {
+            $modelClass = $this->model;
+            $user = new $modelClass();
+            $tableName = $user->getSource();
+            $this->_connection->dropTable($tableName);
+        }
+
+        return true;
+    }
+
+    /**
      * Set the morpholigic of the table to the database
      *
      * @param $tableName

@@ -172,7 +172,7 @@ class AclService
 
         $highestAcl = $this->_aclModel->findFirst($params);
 
-        if ($highestAcl === false) {
+        if (!$highestAcl) {
             $level = 0;
         } else {
             $level = $highestAcl->aclLevel;
