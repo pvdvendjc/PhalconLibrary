@@ -185,7 +185,7 @@ class DatabaseInstaller
     {
 
         $tableExists = $this->_connection->tableExists($tableName);
-        $tableSchema = null;
+        $tableSchema = $model->getSchema();
 
         $definition = $model->getGeneralDefinition($tableName, $definition);
 
@@ -202,7 +202,7 @@ class DatabaseInstaller
                 }
                 $fields[$column->getName()] = $column;
                 if (empty($tableSchema)) {
-                    $tableSchema = $column->getSchemaName();
+                    //$tableSchema = $column->getSchemaName();
                 }
             }
             if ($tableExists) {
@@ -272,7 +272,7 @@ class DatabaseInstaller
                     if (!isset($localReferences[$tableReference->getName()])) {
                         $this->_connection->addForeignKey(
                             $tableName,
-                            $tableReference->getSchemaName(),
+                            $tableSchema,
                             $tableReference
                         );
                     } else {
@@ -313,12 +313,12 @@ class DatabaseInstaller
                         if ($changed == true) {
                             $this->_connection->dropForeignKey(
                                 $tableName,
-                                $tableReference->getSchemaName(),
+                                $tableSchema,
                                 $tableReference->getName()
                             );
                             $this->_connection->addForeignKey(
                                 $tableName,
-                                $tableReference->getSchemaName(),
+                                $tableSchema,
                                 $tableReference
                             );
                         }

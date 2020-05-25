@@ -388,6 +388,11 @@ class BaseController extends Controller
             $this->_responseArray['data']['records'] = $dataRecords;
             $this->_responseArray['data']['recordCount'] = count($dataRecords);
             $this->_responseArray['success'] = true;
+            if ($this->_model->hasModSequence) {
+                $this->_responseArray['data']['highModSeq'] = $this->_model->maximum(['column' => 'highModSeq']);
+            } else {
+                $this->_responseArray['data']['highModSeq'] = -1;
+            }
         }
 
         return json_encode($this->_responseArray);
@@ -410,7 +415,8 @@ class BaseController extends Controller
             $this->_aclService->newUserAcl($this->_postFields[$aclField], $user->id, 100);
         }
         if ($this->beforeSaveAction($this->_responseArray)) {
-            $saveSuccess = $this->_model->save($this->_postFields);
+            $this->_model->assign($this->_postFields);
+            $saveSuccess = $this->_model->save();
             if (!$saveSuccess) {
                 $this->_responseArray['success'] = false;
                 $this->_responseArray['errorMsg'] = Utils::t('errorCreateRecord');

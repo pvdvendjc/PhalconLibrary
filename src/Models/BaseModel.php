@@ -45,6 +45,7 @@ class BaseModel extends Model
     public $primaryKey = 'id';
     public $setModified = true;
     public $cacheAble = false;
+    public $hasModSequence = false;
 
     // General fields
     public $id;
@@ -134,6 +135,16 @@ class BaseModel extends Model
     {
         $columns = $definition['columns'];
         $foreignKeys = isset($definition['references']) ? $definition['references'] : [];
+
+        if ($this->hasModSequence) {
+            $columns[] = new Column('highModSeq', array(
+                    'type' => Column::TYPE_INTEGER,
+                    'notNull' => true,
+                    'size' => 11,
+                    'default' => 0
+                )
+            );
+        }
 
         if ($this->_timeStamps) {
             $columns[] = new Column('createdAt', array(
