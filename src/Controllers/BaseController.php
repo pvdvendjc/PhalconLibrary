@@ -288,6 +288,11 @@ class BaseController extends Controller
             } else {
                 $this->_responseArray['data']['records'] = $store;
                 $this->_responseArray['data']['recordCount'] = count($store);
+                if ($this->_model->hasModSequence) {
+                    $this->_responseArray['data']['highModSeq'] = (int) $this->_model->maximum(['column' => 'highModSeq']);
+                } else {
+                    $this->_responseArray['data']['highModSeq'] = -1;
+                }
                 $this->_responseArray['success'] = true;
             }
         }
@@ -389,7 +394,7 @@ class BaseController extends Controller
             $this->_responseArray['data']['recordCount'] = count($dataRecords);
             $this->_responseArray['success'] = true;
             if ($this->_model->hasModSequence) {
-                $this->_responseArray['data']['highModSeq'] = $this->_model->maximum(['column' => 'highModSeq']);
+                $this->_responseArray['data']['highModSeq'] = (int) $this->_model->maximum(['column' => 'highModSeq']);
             } else {
                 $this->_responseArray['data']['highModSeq'] = -1;
             }
@@ -568,6 +573,16 @@ class BaseController extends Controller
                 }
             }
         }
+    }
+
+    public function highmodAction() {
+        if ($this->_model->hasModSequence) {
+            $this->_responseArray['data']['highModSeq'] = (int)$this->_model->maximum(['column' => 'highModSeq']);
+        } else {
+            $this->_responseArray['data']['highModSeq'] = -1;
+        }
+        $this->_responseArray['success'] = true;
+        return json_encode($this->_responseArray);
     }
 
 }
