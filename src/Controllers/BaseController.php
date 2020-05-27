@@ -278,7 +278,7 @@ class BaseController extends Controller
             }
             $this->makeFilter();
 
-            $recordStore = $this->_model->find($this->_filter);
+            $recordStore = $this->_model->myFind($this->_filter);
             $store = $this->_formatRecords($recordStore, $getRelated);
             if (!$this->afterStoreAction($this->_responseArray, $this->_postFields, $store)) {
                 $this->_responseArray['success'] = false;
@@ -345,7 +345,7 @@ class BaseController extends Controller
     public function dropDownAction()
     {
         $this->makeFilter();
-        $recordStore = $this->_model->find($this->_filter);
+        $recordStore = $this->_model->myFind($this->_filter);
         $store = [];
         foreach ($recordStore as $record) {
             $store[] = $record;

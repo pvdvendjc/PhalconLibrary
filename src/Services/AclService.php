@@ -115,7 +115,7 @@ class AclService
         $aclClass = $this->_aclModel;
         try {
             $acl = new $aclClass();
-            $acl = $acl->findFirst('id = ' . $aclId);
+            $acl = $acl->myFindFirst('id = ' . $aclId);
             $acl->aclLevel = $level;
             $acl->save();
         } catch (\Exception $e) {
@@ -137,7 +137,7 @@ class AclService
         $aclClass = $this->_aclModel;
         try {
             $acl = new $aclClass();
-            $acl = $acl->findFirst(['aclItemId = :aclItemId: AND userId = :userId: AND groupId = :groupId:', 'bind' => [
+            $acl = $acl->myFindFirst(['aclItemId = :aclItemId: AND userId = :userId: AND groupId = :groupId:', 'bind' => [
                 'aclItemId' => $aclItemId,
                 'userId' => $userId,
                 'groupId' => $groupId
@@ -170,7 +170,7 @@ class AclService
             ],
             'order' => 'aclLevel DESC'];
 
-        $highestAcl = $this->_aclModel->findFirst($params);
+        $highestAcl = $this->_aclModel->myFindFirst($params);
 
         if (!$highestAcl) {
             $level = 0;
@@ -195,7 +195,7 @@ class AclService
             'groupId' => $groupId
         ]];
 
-        $acl = $this->_aclModel->findFirst($params);
+        $acl = $this->_aclModel->myFindFirst($params);
         return $acl->delete();
     }
 

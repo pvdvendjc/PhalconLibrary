@@ -109,7 +109,6 @@ class BaseModel extends Model
             }
         }
 
-
     }
 
     /**
@@ -218,7 +217,7 @@ class BaseModel extends Model
      * @param array|string $parameters Query parameters
      * @return Model\ResultsetInterface
      */
-    public static function find($parameters = null): Model\ResultsetInterface
+    public static function myFind($parameters = null): Model\ResultsetInterface
     {
         $parameters = self::softDeleteFetch($parameters);
         return parent::find($parameters);
@@ -281,7 +280,7 @@ class BaseModel extends Model
      * @param array|string $parameters Query parameters
      * @return \Djc\Phalcon\Models\BaseModel
      */
-    public static function findFirst($parameters = null)
+    public static function myFindFirst($parameters = null)
     {
         $parameters = self::softDeleteFetch($parameters);
         return parent::findFirst($parameters);

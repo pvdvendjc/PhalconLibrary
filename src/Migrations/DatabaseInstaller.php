@@ -82,7 +82,7 @@ class DatabaseInstaller
     {
         try {
             if (!$this->_session->has('user')) {
-                $admin = $this->_userModel->findFirst(['userName = :userName:', 'bind' => ['userName' => 'admin']]);
+                $admin = $this->_userModel->myFindFirst(['userName = :userName:', 'bind' => ['userName' => 'admin']]);
                 $this->_session->set('user', $admin);
                 $this->_session->set('userSettings', $admin->getSettings());
             }
@@ -105,7 +105,7 @@ class DatabaseInstaller
         try {
             // get Migrations from the database from previous run
             $maxMigrationRun = Migration::maximum(['column' => 'migrationRun']);
-            $migrations = Migration::find(['migrationRun = :migrationRun:', 'bind' => ['migrationRun' => $maxMigrationRun]]);
+            $migrations = Migration::myFind(['migrationRun = :migrationRun:', 'bind' => ['migrationRun' => $maxMigrationRun]]);
             foreach ($migrations as $migration) {
                 $module = $migration->module;
                 $table = $migration->table;
@@ -123,7 +123,7 @@ class DatabaseInstaller
                 $migrate = new $className();
                 $migrate->down();
                 if (!$migrate->firstVersion) {
-                    $prevMigration = Migration::findFirst(['migrationRun < :maxMigrationRun: AND table = :table:', 'bind' => [
+                    $prevMigration = Migration::myFindFirst(['migrationRun < :maxMigrationRun: AND table = :table:', 'bind' => [
                         'maxMigrationRun' => $maxMigrationRun,
                         'table' => $table
                     ], 'order' => 'migrationRun DESC']);
@@ -445,7 +445,7 @@ class DatabaseInstaller
                 $migrationRecord = false;
             } else {
                 // Check if migration is already in the database
-                $migrationRecord = Migration::findFirst(['version = :version: AND table = :table:', 'bind' => [
+                $migrationRecord = Migration::myFindFirst(['version = :version: AND table = :table:', 'bind' => [
                     'version' => $migration->version,
                     'table' => $migration->getTableName()
                 ]]);
