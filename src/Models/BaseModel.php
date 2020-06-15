@@ -55,6 +55,9 @@ class BaseModel extends Model
     public $modifierId = '';
     public $softDeleted = 0;
 
+    /**
+     * Initialize the model
+     */
     public function initialize()
     {
         $di = new FactoryDefault();
@@ -67,6 +70,9 @@ class BaseModel extends Model
 
     }
 
+    /**
+     * Run before initialization and after construction of the ModelClass
+     */
     public function onConstruct()
     {
         $di = new FactoryDefault();
@@ -80,11 +86,17 @@ class BaseModel extends Model
         }
     }
 
+    /**
+     * Manipulate fields after fetching them
+     */
     public function afterFetch()
     {
         $this->softDeleted = boolval($this->softDeleted);
     }
 
+    /**
+     * Set Timestamp and Modifier fields before validation
+     */
     public function beforeValidation()
     {
         $di = new FactoryDefault();
@@ -459,6 +471,11 @@ class BaseModel extends Model
         return $this->_boolFields;
     }
 
+    /**
+     * Format the posted fields to match with database
+     * 
+     * @param $postFields
+     */
     public function formatFields(&$postFields)
     {
         foreach ($this->_dateFields as $dateField) {
