@@ -49,6 +49,11 @@ class BaseController extends Controller
     public $dateTimeFormat;
     public $userLanguage = 'nl';
 
+    /**
+     * Initialize the controller, always called first when constructing a Controller
+     *
+     * @throws Exception
+     */
     public function initialize()
     {
         // Disable the views in the controller. Just return a json-formatted string
@@ -142,6 +147,9 @@ class BaseController extends Controller
         return false;
     }
 
+    /**
+     * Create a filter from the keys given by the frontend
+     */
     public function makeFilter()
     {
         $bindArray = [];
@@ -198,7 +206,7 @@ class BaseController extends Controller
     }
 
     /**
-     * Format Records (specially dateTimeFields) and get all related fields (if in model)
+     * Format Records (specially dateTimeFields and boolFields) and get all related fields (if in model)
      *
      * @param array $records
      * @param boolean $getRelated
@@ -337,6 +345,10 @@ class BaseController extends Controller
         return json_encode($this->_responseArray);
     }
 
+    /**
+     * Send all records for a dropdown array to the frontend
+     * @return false|string
+     */
     public function dropDownAction()
     {
         $this->makeFilter();
@@ -399,6 +411,12 @@ class BaseController extends Controller
         return true;
     }
 
+    /**
+     * Create a new record
+     * @return false|string
+     * @throws \Phalcon\Db\Exception
+     * @throws \Phalcon\Security\Exception
+     */
     public function createAction()
     {
         $aclField = $this->_model->aclField;
@@ -454,6 +472,9 @@ class BaseController extends Controller
         return true;
     }
 
+    /**
+     * Update an existing record
+     */
     public function updateAction()
     {
         $pkField = $this->_model->primaryKey;
@@ -488,6 +509,9 @@ class BaseController extends Controller
         return true;
     }
 
+    /**
+     * Delete an existing record and keep track of the SoftDelete functions in the baseModel
+     */
     public function deleteAction()
     {
         $pkField = $this->_model->primaryKey;
@@ -526,6 +550,10 @@ class BaseController extends Controller
 
     }
 
+    /**
+     * Restore a softdeleted record
+     *
+     */
     public function restoreAction()
     {
         $record = $this->_model->findByPk($this->_postFields[$this->_model->primaryKey]);
@@ -546,11 +574,18 @@ class BaseController extends Controller
 
     }
 
+    /**
+     * Keep Alive the session in the frontend
+     * @return false|string
+     */
     public function keepaliveAction()
     {
         return json_encode(array('success' => true, 'message' => 'KAL called', 'sessionMaxLifeTime' => ini_get('session.gc_maxlifetime')));
     }
 
+    /**
+     * Remove the modelscache if initiated by the frontend
+     */
     public function removeCache() {
         if ($this->getDI()->has('modelsCache')) {
             $cache = $this->getDI()->get('modelsCache');
