@@ -165,9 +165,9 @@ class DatabaseInstaller
     public function down() {
         if ($this->firstVersion) {
             $modelClass = $this->model;
-            $user = new $modelClass();
-            $tableName = $user->getSource();
-            $this->_connection->dropTable($tableName);
+            $model = new $modelClass();
+            $tableName = $model->getSource();
+            $model->getWriteConnection()->dropTable($tableName);
         }
 
         return true;
@@ -183,6 +183,7 @@ class DatabaseInstaller
      */
     public function morphTable($tableName, $model, $definition)
     {
+        $this->_connection = $model->getWriteConnection();
 
         $tableExists = $this->_connection->tableExists($tableName);
         $tableSchema = $model->getSchema();
@@ -210,6 +211,26 @@ class DatabaseInstaller
                 $description = $this->_connection->describeColumns($tableName);
                 foreach ($description as $currentField) {
                     $currentFields[$currentField->getName()] = $currentField;
+                }
+
+                $localReferences = [];
+                $activeReferences = $this->_connection->describeReferences($tableName);
+                foreach ($activeReferences as $activeReference) {
+                    $localReferences[$activeReference->getName()] = [
+                        'referencedTable' => $activeReference->getReferencedTable(),
+                        "referencedSchema" => $activeReference->getReferencedSchema(),
+                        'columns' => $activeReference->getColumns(),
+                        'referencedColumns' => $activeReference->getReferencedColumns(),
+                    ];
+                }
+
+                foreach ($localReferences as $key => $tableReference) {
+                    $this->_connection->dropForeignKey(
+                        $tableName,
+                        $tableSchema,
+                        $key
+                    );
+
                 }
 
                 foreach ($fields as $fieldName => $column) {
