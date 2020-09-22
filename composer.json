@@ -4,5 +4,8 @@
     "psr-4": {
       "Djc\\Phalcon\\": "src/"
     }
+  },
+  "require": {
+    "ext-json": "*"
   }
 }

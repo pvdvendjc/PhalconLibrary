@@ -109,7 +109,15 @@ class BaseController extends Controller
         }
 
         if (array_key_exists('listFields', $this->_postFields)) {
-            $this->_model->setListFields(json_decode($this->_postFields['listFields']));
+            $wantedListFields = json_decode($this->_postFields['listFields']);
+            $currentListFields = $this->_model->getListFields();
+            foreach ($wantedListFields as $key => $listField) {
+                if (array_key_exists($listField, $currentListFields)) {
+                    $wantedListFields[$listField] = $currentListFields[$listField];
+                    unset($wantedListFields[$key]);
+                }
+            }
+            $this->_model->setListFields($wantedListFields);
         }
 
         if (array_key_exists('filters', $this->_postFields)) {
