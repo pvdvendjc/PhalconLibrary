@@ -499,4 +499,69 @@ class BaseModel extends Model
             }
         }
     }
+
+    /**
+     * @param bool $modifiers
+     */
+    public function setModifiers(bool $modifiers): void
+    {
+        $this->_modifiers = $modifiers;
+    }
+
+    /**
+     * @param bool $softDeletes
+     */
+    public function setSoftDeletes(bool $softDeletes): void
+    {
+        $this->_softDeletes = $softDeletes;
+    }
+
+    /**
+     * @param bool $timeStamps
+     */
+    public function setTimeStamps(bool $timeStamps): void
+    {
+        $this->_timeStamps = $timeStamps;
+    }
+
+    /**
+     * @param array $dateFields
+     */
+    public function setDateFields(array $dateFields): void
+    {
+        $this->_dateFields = $dateFields;
+    }
+
+    /**
+     * @param array $dateTimeFields
+     */
+    public function setDateTimeFields(array $dateTimeFields): void
+    {
+        $this->_dateTimeFields = $dateTimeFields;
+    }
+
+    /**
+     * @param array $relatedFields
+     */
+    public function setRelatedFields(array $relatedFields): void
+    {
+        $this->_relatedFields = $relatedFields;
+    }
+
+    /**
+     * @param array $jsonFields
+     */
+    public function setJsonFields(array $jsonFields): void
+    {
+        $this->_jsonFields = $jsonFields;
+    }
+
+    /**
+     * @param array $boolFields
+     */
+    public function setBoolFields(array $boolFields): void
+    {
+        $this->_boolFields = $boolFields;
+    }
+
 }
