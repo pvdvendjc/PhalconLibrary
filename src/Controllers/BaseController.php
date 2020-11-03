@@ -193,6 +193,9 @@ class BaseController extends Controller
                     $filterString .= ' IN({' . $filter['field'] . '_' . $key . ':array})';
                     $addValue = false;
                     break;
+                default:
+                    $filterString .= '=';
+                    break;
             }
             if ($addValue !== false) {
                 $filterString .= ':' . $filter['field'] . '_' . $key . ':';
@@ -365,11 +368,7 @@ class BaseController extends Controller
     public function dropDownAction()
     {
         $this->makeFilter();
-        $recordStore = $this->_model->myFind($this->_filter);
-        $store = [];
-        foreach ($recordStore as $record) {
-            $store[] = $record;
-        }
+        $store = $this->_model->myFind($this->_filter);
         $this->afterStoreAction($this->_responseArray, $this->_postFields, $store);
         if (array_key_exists('valueField', $this->_postFields)) {
             $valueField = $this->_postFields['valueField'];
