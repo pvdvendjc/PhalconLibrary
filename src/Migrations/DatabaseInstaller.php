@@ -155,7 +155,7 @@ class DatabaseInstaller
      */
     public function up()
     {
-        return false;
+        return true;
     }
 
     /**
