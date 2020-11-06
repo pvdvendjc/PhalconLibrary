@@ -193,9 +193,6 @@ class BaseController extends Controller
                     $filterString .= ' IN({' . $filter['field'] . '_' . $key . ':array})';
                     $addValue = false;
                     break;
-                default:
-                    $filterString .= '=';
-                    break;
             }
             if ($addValue !== false) {
                 $filterString .= ':' . $filter['field'] . '_' . $key . ':';
@@ -238,6 +235,13 @@ class BaseController extends Controller
             foreach ($this->_model->getBoolFields() as $boolField) {
                 $record->$boolField = boolval($record->$boolField);
             }
+            foreach ($this->_model->getJsonFields() as $jsonField) {
+                $value = json_decode($record->$jsonField, true);
+                if ($value == null) {
+                    $value = [];
+                }
+                $record->$jsonField = $value;
+            }
             $dataRecord = $this->_getDataRecord($record, $this->_model->getListFields($getRelated));
             $returnRecords[$recordKey] = $dataRecord;
         }
@@ -267,8 +271,6 @@ class BaseController extends Controller
             } else {
                 if (method_exists($record, $field)) {
                     $dataRecord->$field = $record->$field();
-                } elseif (in_array($field, $record->getJsonFields())) {
-                    $dataRecord->$field = json_decode($record->$field);
                 } else {
                     $dataRecord->$field = $record->$field;
                 }
@@ -449,9 +451,10 @@ class BaseController extends Controller
             $saveSuccess = $this->_model->save();
             if (!$saveSuccess) {
                 $this->_responseArray['success'] = false;
-                $this->_responseArray['errorMsg'] = Utils::t('errorCreateRecord');
+                $this->_responseArray['errorMsg'] = Utils::t('errorCreateRecord') . '<br />';
                 foreach ($this->_model->getMessages() as $message) {
                     error_log($message);
+                    $this->_responseArray['errorMsg'] .= $message . '<br />';
                 }
             } else {
                 if ($this->_model->cacheAble) {
