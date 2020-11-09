@@ -326,7 +326,7 @@ class BaseModel extends Model
         return parent::findFirst($parameters);
     }
 
-    public static function findByPk($pk, $pkField)
+    public static function findByPk($pk, $pkField = 'id')
     {
         $parameters = [$pkField . '=:pk:', 'bind' => ['pk' => $pk]];
         return parent::findFirst($parameters);
