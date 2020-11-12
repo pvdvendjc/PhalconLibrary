@@ -93,11 +93,16 @@ class BaseController extends Controller
                 $this->_postFields = $this->request->getJsonRawBody(true);
             }
 
+            if (!is_array($this->_postFields)) {
+                error_log(get_called_class());
+                error_log(print_r($_SERVER['REQUEST_URI'], true));
+            }
+
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
 
-        if (array_key_exists('sortOrder', $this->_postFields)) {
+        if (array_key_exists('sortOrder', $this->_postFields) && ($this->request->isGet() || $this->request->isDelete())) {
             $orders = json_decode($this->_postFields['sortOrder'], true);
             $orderString = '';
             foreach ($orders as $order) {
@@ -234,13 +239,6 @@ class BaseController extends Controller
             }
             foreach ($this->_model->getBoolFields() as $boolField) {
                 $record->$boolField = boolval($record->$boolField);
-            }
-            foreach ($this->_model->getJsonFields() as $jsonField) {
-                $value = json_decode($record->$jsonField, true);
-                if ($value == null) {
-                    $value = [];
-                }
-                $record->$jsonField = $value;
             }
             $dataRecord = $this->_getDataRecord($record, $this->_model->getListFields($getRelated));
             $returnRecords[$recordKey] = $dataRecord;
@@ -439,7 +437,6 @@ class BaseController extends Controller
     public function createAction()
     {
         $aclField = $this->_model->aclField;
-        $this->_postFields[$this->_model->primaryKey] = $this->_model->getUUID();
         $this->_model->formatFields($this->_postFields);
         if ($aclField) {
             $user = $this->session->get('user');

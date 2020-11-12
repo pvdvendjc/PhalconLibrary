@@ -92,6 +92,13 @@ class BaseModel extends Model
     public function afterFetch()
     {
         $this->softDeleted = boolval($this->softDeleted);
+        foreach ($this->_jsonFields as $jsonField) {
+            $value = json_decode($this->$jsonField, true);
+            if ($value == null) {
+                $value = [];
+            }
+            $this->$jsonField = $value;
+        }
     }
 
     /**
@@ -119,6 +126,10 @@ class BaseModel extends Model
                 if ($this->setModified)
                     $this->modifierId = $currentUserId;
             }
+        }
+        $pkField = $this->primaryKey;
+        if ($this->$pkField == '') {
+            $this->$pkField = $this->getUUID();
         }
 
     }
@@ -473,7 +484,7 @@ class BaseModel extends Model
 
     /**
      * Format the posted fields to match with database
-     * 
+     *
      * @param $postFields
      */
     public function formatFields(&$postFields)
