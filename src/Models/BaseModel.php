@@ -131,6 +131,10 @@ class BaseModel extends Model
         if ($this->$pkField == '') {
             $this->$pkField = $this->getUUID();
         }
+        foreach ($this->_jsonFields as $jsonField) {
+            $value = json_encode($this->$jsonField);
+            $this->$jsonField = $value;
+        }
 
     }
 
@@ -499,11 +503,11 @@ class BaseModel extends Model
                 $postFields[$dateField] = strtotime($postFields[$dateField]);
             }
         }
-        foreach ($this->_jsonFields as $jsonField) {
-            if (array_key_exists($jsonField, $postFields)) {
-                $postFields[$jsonField] = json_encode($postFields[$jsonField]);
-            }
-        }
+//        foreach ($this->_jsonFields as $jsonField) {
+//            if (array_key_exists($jsonField, $postFields)) {
+//                $postFields[$jsonField] = json_encode($postFields[$jsonField]);
+//            }
+//        }
         foreach ($this->_boolFields as $boolField) {
             if (array_key_exists($boolField, $postFields)) {
                 $postFields[$boolField] = $postFields[$boolField] ? 1 : 0;
