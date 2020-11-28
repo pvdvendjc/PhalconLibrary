@@ -10,6 +10,7 @@ namespace Djc\Phalcon\Controllers;
 
 use Djc\Phalcon\Migrations\DatabaseInstaller;
 use Djc\Phalcon\Models\BaseModel;
+use Djc\Phalcon\Models\ModelSequence;
 use Djc\Phalcon\Utils;
 use Phalcon\Exception;
 use Phalcon\Mvc\Controller;
@@ -240,6 +241,13 @@ class BaseController extends Controller
             foreach ($this->_model->getBoolFields() as $boolField) {
                 $record->$boolField = boolval($record->$boolField);
             }
+//            foreach ($this->_model->getJsonFields() as $jsonField) {
+//                $value = json_decode($record->$jsonField, true);
+//                if ($value == null) {
+//                    $value = [];
+//                }
+//                $record->$jsonField = $value;
+//            }
             $dataRecord = $this->_getDataRecord($record, $this->_model->getListFields($getRelated));
             $returnRecords[$recordKey] = $dataRecord;
         }
@@ -307,11 +315,7 @@ class BaseController extends Controller
             } else {
                 $this->_responseArray['data']['records'] = $store;
                 $this->_responseArray['data']['recordCount'] = count($store);
-                if ($this->_model->hasModSequence) {
-                    $this->_responseArray['data']['highModSeq'] = (int) $this->_model->maximum(['column' => 'highModSeq']);
-                } else {
-                    $this->_responseArray['data']['highModSeq'] = -1;
-                }
+                $this->_responseArray['data']['highModSeq'] = $this->_model->getHighModSequence();
                 $this->_responseArray['success'] = true;
             }
         }
@@ -412,11 +416,7 @@ class BaseController extends Controller
             $this->_responseArray['data']['records'] = $dataRecords;
             $this->_responseArray['data']['recordCount'] = count($dataRecords);
             $this->_responseArray['success'] = true;
-            if ($this->_model->hasModSequence) {
-                $this->_responseArray['data']['highModSeq'] = (int) $this->_model->maximum(['column' => 'highModSeq']);
-            } else {
-                $this->_responseArray['data']['highModSeq'] = -1;
-            }
+            $this->_responseArray['data']['highModSeq'] = $this->_model->getHighModSequence();
         }
 
         return json_encode($this->_responseArray);
@@ -618,11 +618,7 @@ class BaseController extends Controller
     }
 
     public function highmodAction() {
-        if ($this->_model->hasModSequence) {
-            $this->_responseArray['data']['highModSeq'] = (int)$this->_model->maximum(['column' => 'highModSeq']);
-        } else {
-            $this->_responseArray['data']['highModSeq'] = -1;
-        }
+        $this->_responseArray['data']['highModSeq'] = $this->_model->getHighModSequence();
         $this->_responseArray['success'] = true;
         return json_encode($this->_responseArray);
     }

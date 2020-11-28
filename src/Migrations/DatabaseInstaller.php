@@ -8,6 +8,7 @@
 namespace Djc\Phalcon\Migrations;
 
 use Djc\Phalcon\Models\Migration;
+use Djc\Phalcon\Models\ModelSequence;
 use Phalcon\Di;
 
 use Phalcon\Di\FactoryDefault;
@@ -88,6 +89,9 @@ class DatabaseInstaller
             }
             $maxMigrationRun = Migration::maximum(['column' => 'migrationRun']) + 1;
             error_log('Migration run number -> ' . $maxMigrationRun);
+            $migratesBase = $this->getMigrations('');
+            $this->runMigrations($migratesBase, $maxMigrationRun);
+            error_log('Base is updated/installed');
             foreach ($this->_modules as $module) {
                 $migrates = $this->getMigrations(ucfirst($module));
                 $this->runMigrations($migrates, $maxMigrationRun);
@@ -412,6 +416,7 @@ class DatabaseInstaller
                 }
             }
         }
+
     }
 
     public function setModule($module)

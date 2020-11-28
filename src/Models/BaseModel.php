@@ -17,6 +17,7 @@ use Phalcon\Di\FactoryDefault;
 use Phalcon\Mvc\Model;
 use Phalcon\Mvc\Model\Behavior\SoftDelete;
 use Phalcon\Security\Random;
+use Phalcon\Mvc\Model\MetaDataInterface;
 
 class BaseModel extends Model
 {
@@ -127,6 +128,19 @@ class BaseModel extends Model
                     $this->modifierId = $currentUserId;
             }
         }
+
+        if ($this->hasModSequence) {
+            $curModSequence = ModelSequence::findFirst(['tableName = :tableName:', 'bind' => ['tableName' => $this->getSource()]]);
+            if (is_null($curModSequence)) {
+                $curModSequence = new ModelSequence();
+                $curModSequence->tableName = $this->getSource();
+                $curModSequence->highModSequence = 0;
+                $curModSequence->save();
+            }
+            $curModSequence->highModSequence++;
+            $curModSequence->save();
+        }
+
         $pkField = $this->primaryKey;
         if ($this->$pkField == '') {
             $this->$pkField = $this->getUUID();
@@ -135,7 +149,6 @@ class BaseModel extends Model
             $value = json_encode($this->$jsonField);
             $this->$jsonField = $value;
         }
-
     }
 
     /**
@@ -162,16 +175,16 @@ class BaseModel extends Model
         $columns = $definition['columns'];
         $foreignKeys = isset($definition['references']) ? $definition['references'] : [];
 
-        if ($this->hasModSequence) {
-            $columns[] = new Column('highModSeq', array(
-                    'type' => Column::TYPE_INTEGER,
-                    'notNull' => true,
-                    'size' => 11,
-                    'default' => 0
-                )
-            );
-        }
-
+//        if ($this->hasModSequence) {
+//            $columns[] = new Column('highModSeq', array(
+//                    'type' => Column::TYPE_INTEGER,
+//                    'notNull' => true,
+//                    'size' => 11,
+//                    'default' => 0
+//                )
+//            );
+//        }
+//
         if ($this->_timeStamps) {
             $columns[] = new Column('createdAt', array(
                 'type' => Column::TYPE_BIGINTEGER,
@@ -248,15 +261,10 @@ class BaseModel extends Model
     {
         $parameters = self::softDeleteFetch($parameters);
         return parent::find($parameters);
-//        $records = self::getCache($parameters);
-//        if ($records === null) {
-//            return parent::find($parameters);
-//        } else {
-//            return $records;
-//        }
     }
 
-    public static function getCache(&$parameters) {
+    public static function getCache(&$parameters)
+    {
         return null;
         $class = get_called_class();
         $source = (new $class)->getSource();
@@ -406,7 +414,8 @@ class BaseModel extends Model
         return $parameters;
     }
 
-    public static function cachedFetch($parameters = null, $source = '') {
+    public static function cachedFetch($parameters = null, $source = '')
+    {
         $key = $source . self::_createKey($parameters);
 
         $di = new FactoryDefault();
@@ -431,7 +440,7 @@ class BaseModel extends Model
                 $uniqueKey[] = $key . ':' . $value;
             } else {
                 if (is_array($value)) {
-                    $uniqueKey[] = $key . ':[' . self::_createKey($value) .']';
+                    $uniqueKey[] = $key . ':[' . self::_createKey($value) . ']';
                 }
             }
         }
@@ -577,6 +586,21 @@ class BaseModel extends Model
     public function setBoolFields(array $boolFields): void
     {
         $this->_boolFields = $boolFields;
+    }
+
+    public function getHighModSequence() {
+        if ($this->hasModSequence) {
+            $curModSequence = ModelSequence::findFirst(['tableName = :tableName:', 'bind' => ['tableName' => $this->getSource()]]);
+            if (is_null($curModSequence)) {
+                $curModSequence = new ModelSequence();
+                $curModSequence->tableName = $this->getSource();
+                $curModSequence->highModSequence = 0;
+                $curModSequence->save();
+            }
+            return $curModSequence->highModSequence;
+        } else {
+            return -1;
+        }
     }
 
 }
