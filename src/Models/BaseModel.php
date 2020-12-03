@@ -94,7 +94,7 @@ class BaseModel extends Model
     {
         $this->softDeleted = boolval($this->softDeleted);
         foreach ($this->_jsonFields as $jsonField) {
-            $value = json_decode($this->$jsonField, true);
+            $value = json_decode($this->$jsonField, false);
             if ($value == null) {
                 $value = [];
             }

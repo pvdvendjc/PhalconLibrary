@@ -45,4 +45,13 @@ class Utils
         }
         return $newObject;
     }
+
+    public static function convertDateTimeFormat($dateFormat) {
+        $dateFormat = str_replace('dd', 'd', $dateFormat);
+        $dateFormat = str_replace('MM', 'm', $dateFormat);
+        $dateFormat = str_replace('yyyy', 'Y', $dateFormat);
+        $dateFormat = str_replace('HH', 'H', $dateFormat);
+        $dateFormat = str_replace('mm', 'i', $dateFormat);
+        return $dateFormat;
+    }
 }
