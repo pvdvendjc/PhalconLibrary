@@ -92,11 +92,9 @@ class BaseController extends Controller
             }
             if ($this->request->isPost() || $this->request->isPut()) {
                 $this->_postFields = $this->request->getJsonRawBody(true);
-            }
-
-            if (!is_array($this->_postFields)) {
-                error_log(get_called_class());
-                error_log(print_r($_SERVER['REQUEST_URI'], true));
+                if (!is_array($this->_postFields)) {
+                    $this->_postFields = [];
+                }
             }
 
         } catch (Exception $e) {

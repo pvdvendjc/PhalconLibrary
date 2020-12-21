@@ -46,6 +46,12 @@ class Utils
         return $newObject;
     }
 
+    /**
+     * Converts a dateTime format string form PHP-formats to JavaScript-formats
+     *
+     * @param string $dateFormat
+     * @return string
+     */
     public static function convertDateTimeFormat($dateFormat) {
         $dateFormat = str_replace('dd', 'd', $dateFormat);
         $dateFormat = str_replace('MM', 'm', $dateFormat);
@@ -54,4 +60,24 @@ class Utils
         $dateFormat = str_replace('mm', 'i', $dateFormat);
         return $dateFormat;
     }
+
+    /**
+     * Convert strings (formatted as number or € currency) to a float
+     *
+     * @param string $numberString
+     * @return float
+     */
+    public static function convertNumberString($numberString) {
+        // remove € signs
+        $numberString = trim(str_replace('€', '', $numberString));
+        // check if decimalseperator is present and of type ','
+        if (strpos($numberString, ',') && (strpos($numberString, ',') > strpos($numberString, '.'))) {
+            // if there are thousandseperators remove them
+            $numberString = str_replace('.', '', $numberString);
+            // replace ',' with '.' as decimalseperator
+            $numberString = str_replace(',', '.', $numberString);
+        }
+        return (floatval($numberString));
+    }
+
 }
