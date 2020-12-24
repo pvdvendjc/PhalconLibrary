@@ -370,7 +370,8 @@ class BaseController extends Controller
     public function dropDownAction()
     {
         $this->makeFilter();
-        $store = $this->_model->myFind($this->_filter);
+        $recordStore = $this->_model->myFind($this->_filter);
+        $store = $this->_formatRecords($recordStore);
         $this->afterStoreAction($this->_responseArray, $this->_postFields, $store);
         if (array_key_exists('valueField', $this->_postFields)) {
             $valueField = $this->_postFields['valueField'];
