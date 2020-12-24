@@ -597,7 +597,7 @@ class BaseModel extends Model
                 $curModSequence->highModSequence = 0;
                 $curModSequence->save();
             }
-            return $curModSequence->highModSequence;
+            return intval($curModSequence->highModSequence);
         } else {
             return -1;
         }
