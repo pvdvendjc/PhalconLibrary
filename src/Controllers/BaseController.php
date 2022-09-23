@@ -197,6 +197,9 @@ class BaseController extends Controller
                     $filterString .= ' IN({' . $filter['field'] . '_' . $key . ':array})';
                     $addValue = false;
                     break;
+                case 'LIKE':
+                    $filterString .= ' LIKE ';
+                break;
             }
             if ($addValue !== false) {
                 $filterString .= ':' . $filter['field'] . '_' . $key . ':';
