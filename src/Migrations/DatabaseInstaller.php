@@ -8,11 +8,9 @@
 namespace Djc\Phalcon\Migrations;
 
 use Djc\Phalcon\Models\Migration;
-use Djc\Phalcon\Models\ModelSequence;
-use Phalcon\Di;
+use Phalcon\Di\Di;
 
 use Phalcon\Di\FactoryDefault;
-use Phalcon\Exception;
 use Phalcon\Db\Exception as dbException;
 
 class DatabaseInstaller
@@ -34,7 +32,7 @@ class DatabaseInstaller
             $this->_connection = $di->getDefault()->get('db');
             $this->_session = $di->getDefault()->get('session');
             $this->_userModel = $userModel;
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             error_log($ex->getMessage());
         }
     }
@@ -72,7 +70,7 @@ class DatabaseInstaller
                 error_log($key);
             }
             $this->runMigrations($migrates, 2);
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             error_log($ex->getMessage());
             return false;
         }
@@ -97,7 +95,7 @@ class DatabaseInstaller
                 $this->runMigrations($migrates, $maxMigrationRun);
                 error_log($module . ' is updated/installed');
             }
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             error_log($ex->getMessage());
             return false;
         }
@@ -122,7 +120,7 @@ class DatabaseInstaller
                 $fileName = $path . $migration->version . '_' . substr($className, 0, -9) . '.php';
                 include $fileName;
                 if (!class_exists($className)) {
-                    throw new Exception('Migration class cannot be found ' . $className . ' at ' . $fileName);
+                    throw new \Exception('Migration class cannot be found ' . $className . ' at ' . $fileName);
                 }
                 $migrate = new $className();
                 $migrate->down();
@@ -141,14 +139,14 @@ class DatabaseInstaller
                     $fileName = $path . $prevMigration->version . '_' . substr($className, 0, -9) . '.php';
                     include $fileName;
                     if (!class_exists($className)) {
-                        throw new Exception('Migration class cannot be found ' . $className . ' at ' . $fileName);
+                        throw new \Exception('Migration class cannot be found ' . $className . ' at ' . $fileName);
                     }
                     $migrate = new $className();
                     $migrate->morph();
                 }
                 $migration->delete();
             }
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             error_log($ex->getMessage());
             return false;
         }
@@ -447,7 +445,7 @@ class DatabaseInstaller
                 $className = substr($fileName, 9, -4) . '_' . $version;
                 require_once $path . $fileName;
                 if (!class_exists($className)) {
-                    throw new Exception('Migration class cannot be found ' . $className . ' at ' . $path . $fileName);
+                    throw new \Exception('Migration class cannot be found ' . $className . ' at ' . $path . $fileName);
                 }
                 $migrate = new $className();
                 $migrates[$fileName] = $migrate;

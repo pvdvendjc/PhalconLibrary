@@ -12,7 +12,6 @@ use Djc\Phalcon\Migrations\DatabaseInstaller;
 use Djc\Phalcon\Models\BaseModel;
 use Djc\Phalcon\Models\ModelSequence;
 use Djc\Phalcon\Utils;
-use Phalcon\Exception;
 use Phalcon\Mvc\Controller;
 
 class BaseController extends Controller
@@ -53,7 +52,7 @@ class BaseController extends Controller
     /**
      * Initialize the controller, always called first when constructing a Controller
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function initialize()
     {
@@ -67,7 +66,7 @@ class BaseController extends Controller
             $this->_headers = $this->request->getHeaders();
             if ($this->checkAccess() && !$this->request->get('checkAccess', null, false)) {
                 if ($this->_headers['Authorization'] !== 'Bearer ' . $this->session->authToken) {
-                    throw new Exception('No correct token supplied');
+                    throw new \Exception('No correct token supplied');
                 }
             }
 
@@ -78,7 +77,7 @@ class BaseController extends Controller
                 $installer = new DatabaseInstaller();
                 $installer->setModules($this->config->modules);
                 if (!$installer->installDatabase()) {
-                    throw new Exception('Database cannot be installed, call support');
+                    throw new \Exception('Database cannot be installed, call support');
                 }
             }
 
@@ -97,8 +96,8 @@ class BaseController extends Controller
                 }
             }
 
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
         }
 
         if (array_key_exists('sortOrder', $this->_postFields) && ($this->request->isGet() || $this->request->isDelete())) {
@@ -145,7 +144,7 @@ class BaseController extends Controller
      */
     protected function loginAdmin()
     {
-        throw new Exception('Function LoginAdmin not implemented in application');
+        throw new \Exception('Function LoginAdmin not implemented in application');
     }
 
     /**
