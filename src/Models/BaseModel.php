@@ -16,7 +16,7 @@ use Phalcon\Db\Reference;
 use Phalcon\Di\FactoryDefault;
 use Phalcon\Mvc\Model;
 use Phalcon\Mvc\Model\Behavior\SoftDelete;
-use Phalcon\Security\Random;
+use Phalcon\Encryption\Security\Random;
 use Phalcon\Mvc\Model\MetaDataInterface;
 
 class BaseModel extends Model
@@ -155,7 +155,7 @@ class BaseModel extends Model
      * Get a UUID for the ID of a new record
      *
      * @return string
-     * @throws \Phalcon\Security\Exception
+     * @throws \Phalcon\Encryption\Security\Exception
      */
     public function getUUID()
     {
