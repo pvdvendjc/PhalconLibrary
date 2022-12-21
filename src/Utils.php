@@ -69,6 +69,9 @@ class Utils
      */
     public static function convertNumberString($numberString) {
         // remove € signs
+        while ($pos = strpos($numberString, ' ')) {
+            $numberString = trim(substr($numberString, $pos));
+        }
         $numberString = trim(str_replace('€', '', $numberString));
         // check if decimalseperator is present and of type ','
         if (strpos($numberString, ',') && (strpos($numberString, ',') > strpos($numberString, '.'))) {

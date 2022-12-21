@@ -198,7 +198,7 @@ class BaseController extends Controller
                     break;
                 case 'LIKE':
                     $filterString .= ' LIKE ';
-                break;
+                    break;
             }
             if ($addValue !== false) {
                 $filterString .= ':' . $filter['field'] . '_' . $key . ':';
@@ -459,13 +459,13 @@ class BaseController extends Controller
                     $this->removeCache();
                 }
                 $this->_responseArray['success'] = true;
+                $this->_responseArray['newId'] = $this->_model->id;
                 if (!$this->afterCreateAction($this->_responseArray)) {
                     $this->_responseArray['success'] = false;
                     if (strlen($this->_responseArray['errorMsg']) === 0) {
                         $this->_responseArray['errorMsg'] = Utils::t('errorAfterCreate');
                     }
                 } else {
-                    $this->_responseArray['newId'] = $this->_model->id;
                     $pkField = $this->_model->primaryKey;
                     $record = $this->_model->findByPk($this->_model->id, $pkField);
                     $this->_responseArray['data']['records'] = $this->_formatRecords([$record]);
@@ -503,6 +503,8 @@ class BaseController extends Controller
             $record->assign($this->_postFields);
             if ($record->save()) {
                 $this->_responseArray['success'] = true;
+                $this->_responseArray['id'] = $record->id;
+                $this->afterUpdateAction($this->_responseArray, $this->_postFields);
                 $record = $this->_model->findByPk($record->id, $pkField);
                 $this->_responseArray['data']['records'] = $this->_formatRecords([$record]);
                 if ($this->_model->cacheAble) {
