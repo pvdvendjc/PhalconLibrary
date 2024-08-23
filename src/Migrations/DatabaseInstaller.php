@@ -20,12 +20,14 @@ class DatabaseInstaller
     protected $_session;
     protected $_currentModule;
     protected $_userModel;
+    protected $noSharedTables;
 
     public $firstVersion = false;
     public $module = '';
 
-    public function __construct($userModel = null)
+    public function __construct($userModel = null, $noSharedTables = false)
     {
+        $this->noSharedTables = $noSharedTables;
         set_time_limit(1000);   // needed for larger tables
         $di = new FactoryDefault();
         try {
@@ -473,6 +475,18 @@ class DatabaseInstaller
                     'version' => $migration->version,
                     'table' => $migration->getTableName()
                 ]]);
+                $modelClass = $migration->model;
+                $model = new $modelClass();
+                $readConnection = $model->getReadConnectionService();
+                if ($this->noSharedTables) {
+                    if ($readConnection === 'dbShared') {
+                        continue;
+                    }
+                } else {
+                    if ($readConnection === 'db') {
+                        continue;
+                    }
+                }
             }
             if (!$migrationRecord) {
                 $response = $migration->morph();
